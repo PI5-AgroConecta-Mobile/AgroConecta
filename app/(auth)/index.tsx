@@ -4,64 +4,47 @@ import { Link } from 'expo-router';
 export default function EscolhaScreen() {
   return (
     <View style={styles.container}>
+      {/* Painel para Vender */}
       <Link href="/loginAgricultor" asChild style={styles.panel}>
-        <TouchableOpacity style={styles.panelLeft}>
-          <View style={styles.overlayLeft} />
-          <View style={styles.content}>
-            <Image
-              source={require('../../assets/images/simbolo-agricultor.png')}
-              style={styles.icon}
-            />
-            <Text style={styles.textLeft}>QUERO VENDER</Text>
-          </View>
+        <TouchableOpacity>
+          <Image
+            source={require('../../assets/images/simbolo-agricultor.png')}
+            style={styles.icon}
+          />
+          <Text style={styles.textVender}>QUERO VENDER</Text>
         </TouchableOpacity>
       </Link>
+
+      {/* Painel para Comprar */}
       <Link href="/loginCliente" asChild style={styles.panel}>
-        <TouchableOpacity style={styles.panelRight}>
-          <View style={styles.overlayRight} />
-          <View style={styles.content}>
-            <Image
-              source={require('../../assets/images/simbolo-cliente.png')}
-              style={styles.icon}
-            />
-            <Text style={styles.textRight}>QUERO COMPRAR</Text>
-          </View>
+        <TouchableOpacity style={styles.panelComprar}>
+          <Image
+            source={require('../../assets/images/simbolo-cliente.png')}
+            style={styles.icon}
+          />
+          <Text style={styles.textComprar}>QUERO COMPRAR</Text>
         </TouchableOpacity>
       </Link>
     </View>
   );
 }
 
-// Estilos inspirados no seu projeto web e protótipos
+// Lembre-se que os estilos devem estar aqui também
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'column',
+    backgroundColor: '#FEFAE0',
   },
   panel: {
     flex: 1,
-  },
-  panelLeft: {
-    flex: 1,
-    backgroundColor: '#FEFAE0', // Cor de fundo do agricultor
     justifyContent: 'center',
     alignItems: 'center',
   },
-  panelRight: {
+  panelComprar: {
     flex: 1,
-    backgroundColor: '#283618', // Cor de fundo do cliente
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  overlayLeft: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(254, 250, 224, 0.1)',
-  },
-  overlayRight: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(40, 54, 24, 0.3)',
-  },
-  content: {
+    width: '100%',
+    backgroundColor: '#283618',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -71,12 +54,12 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
     marginBottom: 20,
   },
-  textLeft: {
+  textVender: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#283618',
   },
-  textRight: {
+  textComprar: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#FEFAE0',
