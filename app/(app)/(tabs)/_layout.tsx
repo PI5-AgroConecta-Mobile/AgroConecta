@@ -1,88 +1,71 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text, StyleSheet } from 'react-native';
-
-// Componente para o ícone customizado da TabBar
-const TabBarIcon = ({ name, label, focused }: { name: any; label: string; focused: boolean }) => {
-  const iconColor = focused ? '#FFFFFF' : '#283618';
-  const backgroundColor = focused ? '#606C38' : 'transparent';
-  const labelColor = focused ? '#606C38' : '#283618';
-
-  return (
-    <View style={styles.tabContainer}>
-      <View style={[styles.iconWrapper, { backgroundColor }]}>
-        <Ionicons name={name} size={28} color={iconColor} />
-      </View>
-      <Text style={[styles.label, { color: labelColor }]}>{label}</Text>
-    </View>
-  );
-};
-
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets(); // Usamos para o espaçamento inferior
+
   return (
     <Tabs
       screenOptions={{
-        headerShown: false, // O cabeçalho já é gerenciado pelo Drawer
-        tabBarShowLabel: false, // Vamos usar nosso próprio label no componente customizado
+        headerShown: false, // O cabeçalho é controlado pelo Drawer
+
+        // --- ESTILO DA BARRA DE ABAS ---
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          height: 70,
-          borderTopWidth: 1,
-          borderTopColor: '#E0E0E0',
+          backgroundColor: '#283618', // Fundo verde
+          borderTopWidth: 0,
+          height: 60 + insets.bottom, // Altura dinâmica para a área segura
         },
+        // --- CORES DOS ÍCONES E TEXTOS ---
+        tabBarActiveTintColor: '#FEFAE0', // Cor quando a aba está ativa (creme)
+        tabBarInactiveTintColor: '#A9B388', // Cor quando está inativa (cinza-esverdeado)
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <TabBarIcon name="home-outline" label="Início" focused={focused} />
+          title: 'Início', // O texto que aparece em baixo do ícone
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="produtos" // <-- NOVA ABA ADICIONADA
+        name="produtos"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <TabBarIcon name="search-outline" label="Produtos" focused={focused} />
+          title: 'Produtos',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'search' : 'search-outline'} size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="agendamentos"
+        options={{
+          title: 'Agenda',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="mapa"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <TabBarIcon name="map-outline" label="Mapa" focused={focused} />
+          title: 'Mapa',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'map' : 'map-outline'} size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="perfil"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <TabBarIcon name="person-outline" label="Perfil" focused={focused} />
+          title: 'Perfil',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={size} color={color} />
           ),
         }}
       />
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  tabContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  iconWrapper: {
-    width: 50,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  label: {
-    fontSize: 12,
-  },
-});
