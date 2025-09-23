@@ -14,7 +14,7 @@ import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
 
-// Configuração do calendário (continua igual)
+// Configuração do calendário para português (caso ainda não tenha em outro lugar)
 LocaleConfig.locales['pt-br'] = {
   monthNames: ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'],
   dayNames: ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'],
@@ -22,14 +22,15 @@ LocaleConfig.locales['pt-br'] = {
 };
 LocaleConfig.defaultLocale = 'pt-br';
 
-// --- Lógica de Dados (Simulação - continua igual) ---
+// --- Lógica de Dados (Simulação) ---
 interface Produto {
     id: string; nome: string; produtor: string; precoUnitario: number; unidade: string; descricao: string; imagem: ImageSourcePropType;
 }
 const getProductDetails = (id: string | string[]): Produto => {
     const products: Record<string, Produto> = {
-        '1': { id: '1', nome: 'Tomate Orgânico', produtor: 'Horta da Clara', precoUnitario: 10.99, unidade: 'kg', descricao: 'Tomates frescos e suculentos, cultivados sem agrotóxicos. Perfeitos para saladas, molhos e para comer puro.', imagem: require('../../../assets/images/tomate.jpg')},
-        '2': { id: '2', nome: 'Alface Crespa', produtor: 'Sítio Verde', precoUnitario: 3.50, unidade: 'un', descricao: 'Folhas crocantes e saborosas, ideais para uma salada refrescante e saudável.', imagem: require('../../../assets/images/alface.jpg')},
+        '1': { id: '1', nome: 'Tomate Orgânico', produtor: 'Horta da Clara', precoUnitario: 10.99, unidade: 'kg', descricao: 'Tomates frescos e suculentos, cultivados sem agrotóxicos.', imagem: require('../../../assets/images/tomate.jpg')},
+        '2': { id: '2', nome: 'Alface Crespa', produtor: 'Sítio Verde', precoUnitario: 3.50, unidade: 'un', descricao: 'Folhas crocantes e saborosas, ideais para uma salada refrescante.', imagem: require('../../../assets/images/alface.jpg')},
+        '4': { id: '4', nome: 'Queijo Minas', produtor: 'Laticínios da Serra', precoUnitario: 25.00, unidade: 'kg', descricao: 'Queijo fresco e artesanal, com um sabor suave.', imagem: require('../../../assets/images/queijominas.jpg')},
     };
     return products[String(id)] || products['1'];
 }
@@ -49,36 +50,30 @@ export default function DetalhesProdutoScreen() {
 
   const [quantidade, setQuantidade] = useState(1);
   const [selectedDate, setSelectedDate] = useState('');
-  
-  // --- MUDANÇA 1: O estado dos horários agora é um array ---
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
 
   const horariosDisponiveis = useMemo(() => gerarSlotsDeHorario(), []);
   const precoTotal = (produto.precoUnitario * quantidade).toFixed(2).replace('.', ',');
 
-  // --- MUDANÇA 2: Nova função para lidar com a seleção de horários ---
   const handleSlotSelection = (slot: string) => {
     setSelectedSlots(prevSlots => {
-      // Se o horário já está selecionado, remove-o (desmarca)
       if (prevSlots.includes(slot)) {
         return prevSlots.filter(s => s !== slot);
       }
-      // Se ainda não atingiu o limite de 3, adiciona o novo horário
       if (prevSlots.length < 3) {
         return [...prevSlots, slot];
       }
-      // Se já tem 3, mostra um alerta e não faz nada
       Alert.alert("Limite Atingido", "Você pode selecionar no máximo 3 horários.");
       return prevSlots;
     });
   };
 
   const handleConfirmar = () => {
-    const horariosFormatados = selectedSlots.join(', ');
+    const horariosFormatados = selectedSlots.sort().join(', ');
     Alert.alert(
       "Agendamento Confirmado!",
       `Sua retirada de ${quantidade} ${produto.unidade} de ${produto.nome} foi agendada para ${selectedDate.split('-').reverse().join('/')}.\n\nOpções de horário: ${horariosFormatados}.`,
-      [{ text: "OK", onPress: () => router.push('/(app)/(tabs)') }]
+      [{ text: "OK", onPress: () => router.push('/') }]
     );
   };
 
@@ -86,7 +81,7 @@ export default function DetalhesProdutoScreen() {
     <SafeAreaView style={styles.safeArea}>
       <Stack.Screen options={{ title: produto.nome }} />
       <ScrollView>
-        {/* ... Seção de Detalhes do Produto (continua igual) ... */}
+        {/* --- Seção de Detalhes do Produto --- */}
         <Image source={produto.imagem} style={styles.headerImage} />
         <View style={styles.container}>
             <Text style={styles.producerName}>Vendido por: {produto.produtor}</Text>
@@ -107,10 +102,13 @@ export default function DetalhesProdutoScreen() {
             </View>
             <View style={styles.separator} />
 
-            {/* --- Seção de Agendamento (Atualizada) --- */}
+            {/* --- Seção de Agendamento --- */}
             <Text style={styles.sectionTitle}>Agende a Retirada</Text>
             <Calendar
-                onDayPress={(day) => setSelectedDate(day.dateString)}
+                onDayPress={(day) => {
+                    setSelectedDate(day.dateString);
+                    setSelectedSlots([]); // Limpa os horários ao trocar de dia
+                }}
                 markedDates={{ [selectedDate]: { selected: true, selectedColor: '#283618' } }}
                 minDate={new Date().toISOString().split('T')[0]}
             />
@@ -119,7 +117,6 @@ export default function DetalhesProdutoScreen() {
                     <Text style={styles.subTitle}>Selecione até 3 horários para {selectedDate.split('-').reverse().join('/')}</Text>
                     <View style={styles.slotsContainer}>
                         {horariosDisponiveis.map(slot => {
-                            // --- MUDANÇA 3: A verificação de seleção agora usa o array ---
                             const isSelected = selectedSlots.includes(slot);
                             return (
                                 <TouchableOpacity
@@ -143,9 +140,8 @@ export default function DetalhesProdutoScreen() {
               <Text style={styles.priceValue}>R$ {precoTotal}</Text>
           </View>
           <TouchableOpacity 
-            // --- MUDANÇA 4: O botão agora verifica se o array não está vazio ---
-            style={[styles.confirmButton, (selectedSlots.length === 0) && styles.confirmButtonDisabled]}
-            disabled={selectedSlots.length === 0}
+            style={[styles.confirmButton, (selectedSlots.length === 0 || !selectedDate) && styles.confirmButtonDisabled]}
+            disabled={selectedSlots.length === 0 || !selectedDate}
             onPress={handleConfirmar}
           >
               <Text style={styles.confirmButtonText}>Confirmar Agendamento</Text>
@@ -155,7 +151,7 @@ export default function DetalhesProdutoScreen() {
   );
 }
 
-// --- Estilos (continuam iguais) ---
+// --- Estilos ---
 const styles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
     headerImage: { width: '100%', height: 250 },
