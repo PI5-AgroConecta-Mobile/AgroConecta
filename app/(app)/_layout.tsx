@@ -1,20 +1,19 @@
 import { Drawer } from 'expo-router/drawer';
 import { Ionicons } from '@expo/vector-icons';
-import { Image, TouchableOpacity } from 'react-native';
-import { useNavigation } from 'expo-router';
+import { Image, TouchableOpacity, View, Text, StyleSheet } from 'react-native';
+import { useNavigation, router, useSegments } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
 
-// Componente da Logo com tamanho ajustado
+// --- SEUS COMPONENTES (Não foram alterados) ---
 function HeaderTitleLogo() {
   return (
     <Image
-      style={{ width: 160, height: 45, resizeMode: 'contain' }} // Logo um pouco maior
+      style={{ width: 160, height: 45, resizeMode: 'contain' }}
       source={require('../../assets/images/logo-escura.png')}
     />
   );
 }
 
-// Componente do Botão de Menu (continua igual)
 function HeaderMenuButton() {
     const navigation = useNavigation();
     return (
@@ -27,23 +26,43 @@ function HeaderMenuButton() {
     );
 }
 
+// --- Componente Inteligente para o Cabeçalho ---
+function CustomHeaderTitle() {
+  const segments = useSegments();
+  const currentPage = segments[segments.length - 1];
+  const pagesWithBackArrow = ['sobre', 'configuracoes', 'detalhesProdutos', '[id]'];
+  const shouldShowBackArrow = pagesWithBackArrow.includes(currentPage);
+
+  return (
+    <View>
+      <HeaderTitleLogo />
+      {shouldShowBackArrow && (
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#606C38" />
+          <Text style={styles.backButtonText}>Voltar</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+// --- Layout Principal com Drawer ---
 export default function AppDrawerLayout() {
   return (
     <Drawer
       screenOptions={{
         drawerPosition: 'right',
         drawerActiveTintColor: '#283618',
-        
-        // --- MUDANÇAS NO HEADER ---
-        headerTitleAlign: 'left', // Logo para a esquerda
-        headerLeft: () => null, // Carrinho removido
-        headerTitle: () => <HeaderTitleLogo />,
-        headerRight: () => <HeaderMenuButton />,
-        headerStyle: {
-          backgroundColor: '#FEFAE0',
-          elevation: 0, // Remove sombra (divisória) no Android
-          shadowOpacity: 0, // Remove sombra (divisória) no iOS
+        headerTitleAlign: 'left',
+        headerStyle: { 
+          backgroundColor: '#FFFFFF', 
+          elevation: 0, 
+          shadowOpacity: 0,
+          height: 110,
         },
+        headerTitle: () => <CustomHeaderTitle />,
+        headerRight: () => <HeaderMenuButton />,
+        headerLeft: () => null,
       }}
     >
       <Drawer.Screen
@@ -51,31 +70,54 @@ export default function AppDrawerLayout() {
         options={{
           drawerLabel: 'Início',
           title: 'AgroConecta',
-          drawerIcon: ({ size, color }) => (
+          // TIPO ADICIONADO AQUI
+          drawerIcon: ({ size, color }: { size: number; color: string }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),
         }}
       />
       <Drawer.Screen
-        name="configuracoes"
+        name="(tabs)/configuracoes"
         options={{
           drawerLabel: 'Configurações',
           title: 'Configurações',
-          drawerIcon: ({ size, color }) => (
+          // TIPO ADICIONADO AQUI
+          drawerIcon: ({ size, color }: { size: number; color: string }) => (
             <Ionicons name="cog-outline" size={size} color={color} />
           ),
         }}
       />
       <Drawer.Screen
-        name="sobre"
+        name="(tabs)/sobre"
         options={{
           drawerLabel: 'Sobre',
           title: 'Sobre o App',
-          drawerIcon: ({ size, color }) => (
+          // TIPO ADICIONADO AQUI
+          drawerIcon: ({ size, color }: { size: number; color: string }) => (
             <Ionicons name="information-circle-outline" size={size} color={color} />
           ),
+        }}
+      />
+       <Drawer.Screen
+        name="fazenda/[id]"
+        options={{
+          drawerItemStyle: { display: 'none' },
         }}
       />
     </Drawer>
   );
 }
+
+// --- Estilos para o botão de voltar ---
+const styles = StyleSheet.create({
+    backButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    backButtonText: {
+        marginLeft: 4,
+        fontSize: 16,
+        color: '#606C38',
+    }
+});
