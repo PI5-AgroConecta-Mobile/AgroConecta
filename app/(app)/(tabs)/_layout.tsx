@@ -60,7 +60,8 @@ export default function TabsLayout() {
          {/* --- TELAS ESCONDIDAS DA BARRA --- */}
       <Tabs.Screen name="sobre" options={{ href: null }} />
       <Tabs.Screen name="configuracoes" options={{ href: null }} />
-
+      <Tabs.Screen name="editarPerfil" options={{ href: null }} />
+      <Tabs.Screen name="historico" options={{ href: null }} />
       
       <Tabs.Screen
         name="detalhesProdutos" 
