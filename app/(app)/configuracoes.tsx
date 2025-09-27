@@ -14,7 +14,6 @@ import { Ionicons } from '@expo/vector-icons';
 
 // --- Componentes Reutilizáveis para a Tela ---
 
-// Título de cada seção
 const SectionTitle = ({ title }: { title: string }) => (
     <Text style={styles.sectionTitle}>{title}</Text>
 );
@@ -51,7 +50,6 @@ const NotificationSwitch = ({ icon, label, value, onValueChange }: { icon: any, 
 
 // --- Tela Principal de Configurações ---
 export default function ConfiguracoesScreen() {
-    // Estados para os botões de notificação
     const [lembretes, setLembretes] = useState(true);
     const [statusPedido, setStatusPedido] = useState(true);
     const [novosProdutos, setNovosProdutos] = useState(false);

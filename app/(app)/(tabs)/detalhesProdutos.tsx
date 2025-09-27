@@ -14,7 +14,6 @@ import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
 
-// Configuração do calendário para português (caso ainda não tenha em outro lugar)
 LocaleConfig.locales['pt-br'] = {
   monthNames: ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'],
   dayNames: ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'],
@@ -107,7 +106,7 @@ export default function DetalhesProdutoScreen() {
             <Calendar
                 onDayPress={(day) => {
                     setSelectedDate(day.dateString);
-                    setSelectedSlots([]); // Limpa os horários ao trocar de dia
+                    setSelectedSlots([]); 
                 }}
                 markedDates={{ [selectedDate]: { selected: true, selectedColor: '#283618' } }}
                 minDate={new Date().toISOString().split('T')[0]}

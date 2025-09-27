@@ -15,7 +15,7 @@ import {
 import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-// Habilita a animação LayoutAnimation no Android
+
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
@@ -68,7 +68,6 @@ const AgendamentoCard = ({ agendamento }: { agendamento: Agendamento }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const toggleExpand = () => {
-    // Adiciona uma animação suave ao expandir/colapsar
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsExpanded(!isExpanded);
   };

@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ImageBackground,
-  Linking, // Importar o Linking para abrir URLs
+  Linking, 
   Alert,
 } from 'react-native';
 import { Stack } from 'expo-router';
@@ -20,7 +20,6 @@ const SectionTitle = ({ title }: { title: string }) => (
     <Text style={styles.sectionTitle}>{title}</Text>
 );
 
-// Cartão para o "Como Funciona"
 const StepCard = ({ icon, step, description }: { icon: any, step: string, description: string }) => (
     <View style={styles.stepCard}>
         <Ionicons name={icon} size={32} color="#283618" />
@@ -34,7 +33,6 @@ const StepCard = ({ icon, step, description }: { icon: any, step: string, descri
 export default function SobreScreen() {
 
     const handleRateApp = () => {
-        // No futuro, coloque aqui o link para a sua app na loja
         Alert.alert("Obrigado!", "Em breve, este botão levará para a App Store / Google Play.");
     };
 

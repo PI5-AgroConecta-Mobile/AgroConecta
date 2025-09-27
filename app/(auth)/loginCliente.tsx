@@ -60,7 +60,7 @@ export default function LoginClienteScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#283618', // Fundo verde escuro do PI4
+    backgroundColor: '#283618', 
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
   },
   input: {
     width: '100%',
-    backgroundColor: 'rgba(254, 250, 224, 0.2)', // Fundo semi-transparente
+    backgroundColor: 'rgba(254, 250, 224, 0.2)', 
     borderRadius: 10,
     paddingVertical: 15,
     paddingHorizontal: 20,
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '100%',
-    backgroundColor: '#FEFAE0', // Botão cor creme
+    backgroundColor: '#FEFAE0', 
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',

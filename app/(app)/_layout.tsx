@@ -70,7 +70,6 @@ export default function AppDrawerLayout() {
         options={{
           drawerLabel: 'Início',
           title: 'AgroConecta',
-          // TIPO ADICIONADO AQUI
           drawerIcon: ({ size, color }: { size: number; color: string }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),
@@ -81,7 +80,6 @@ export default function AppDrawerLayout() {
         options={{
           drawerLabel: 'Configurações',
           title: 'Configurações',
-          // TIPO ADICIONADO AQUI
           drawerIcon: ({ size, color }: { size: number; color: string }) => (
             <Ionicons name="cog-outline" size={size} color={color} />
           ),
@@ -92,7 +90,6 @@ export default function AppDrawerLayout() {
         options={{
           drawerLabel: 'Sobre',
           title: 'Sobre o App',
-          // TIPO ADICIONADO AQUI
           drawerIcon: ({ size, color }: { size: number; color: string }) => (
             <Ionicons name="information-circle-outline" size={size} color={color} />
           ),

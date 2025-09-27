@@ -15,7 +15,6 @@
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
-      // --- ADICIONE ESTE BLOCO DE CÓDIGO ---
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION"
       ]

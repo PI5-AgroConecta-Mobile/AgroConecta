@@ -103,7 +103,7 @@ export default function ProdutosScreen() {
 
               {/* Filtro de Distância */}
               <Text style={styles.filterLabel}>Distância Máxima: até {tempFilters.distanciaMax.toFixed(0)} km</Text>
-              <Slider style={{ width: '100%', height: 40, marginBottom: 20 }} minimumValue={1} maximumValue={50} step={1} value={tempFilters.distanciaMax} onValue-Change={(value) => setTempFilters({...tempFilters, distanciaMax: value})} minimumTrackTintColor="#283618" maximumTrackTintColor="#D1D1D1" thumbTintColor="#283618"/>
+              <Slider style={{ width: '100%', height: 40, marginBottom: 20 }} minimumValue={1} maximumValue={50} step={1} value={tempFilters.distanciaMax} onValue-Change={(value: any) => setTempFilters({...tempFilters, distanciaMax: value})} minimumTrackTintColor="#283618" maximumTrackTintColor="#D1D1D1" thumbTintColor="#283618"/>
 
               {/* Filtro de Preço */}
               <Text style={styles.filterLabel}>Preço Máximo: até R$ {tempFilters.precoMax.toFixed(2)}</Text>
@@ -149,7 +149,6 @@ const styles = StyleSheet.create({
     sheetContainer: { flex: 1, paddingHorizontal: 20 },
     sheetTitle: { fontSize: 22, fontWeight: 'bold', color: '#283618', textAlign: 'center', marginBottom: 20 },
     filterLabel: { fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 15 },
-    // NOVOS ESTILOS PARA A GRELHA DE CATEGORIAS
     categoryGridContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -157,13 +156,13 @@ const styles = StyleSheet.create({
         marginBottom: 25,
     },
     categoryChip: {
-        width: '48%', // Para criar 2 colunas
-        marginBottom: 10, // Espaço entre as linhas
+        width: '48%', 
+        marginBottom: 10, 
         paddingVertical: 12,
         borderRadius: 8,
         borderWidth: 1,
         borderColor: '#E0E0E0',
-        alignItems: 'center', // Centraliza o texto
+        alignItems: 'center', 
     },
     categoryChipActive: { backgroundColor: '#606C38', borderColor: '#606C38' },
     categoryText: { fontSize: 14, fontWeight: '600', color: '#606C38' },

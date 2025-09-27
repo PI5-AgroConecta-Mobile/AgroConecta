@@ -46,9 +46,9 @@ const getFazendaDetails = (id: string | string[]): Fazenda => {
                 { id: '5', nome: 'Ovos Caipira', preco: 'R$ 15,00/dúzia', image: require('../../../assets/images/ovos.jpg') },
             ]
         },
-        // Adicione as outras fazendas aqui
+        
     };
-    return fazendas[String(id)] || fazendas['1']; // Retorna a fazenda ou uma padrão
+    return fazendas[String(id)] || fazendas['1']; 
 }
 
 // --- Componente de Card de Produto ---

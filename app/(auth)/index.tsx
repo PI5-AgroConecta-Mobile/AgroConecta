@@ -29,7 +29,6 @@ export default function EscolhaScreen() {
   );
 }
 
-// Lembre-se que os estilos devem estar aqui também
 const styles = StyleSheet.create({
   container: {
     flex: 1,

@@ -27,7 +27,6 @@ export default function MapaScreen() {
     const [localizacao, setLocalizacao] = useState<Location.LocationObject | null>(null);
     const [erroMsg, setErroMsg] = useState<string | null>(null);
 
-    // Efeito para pedir permissão e obter a localização do usuário
     useEffect(() => {
         (async () => {
             let { status } = await Location.requestForegroundPermissionsAsync();

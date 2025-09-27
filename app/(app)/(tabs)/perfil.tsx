@@ -11,8 +11,6 @@ import {
 import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-// --- 1. CORREÇÃO AQUI: Simplificamos o tipo do 'href' ---
-// Em vez de um tipo complexo, usamos 'any' para dar mais flexibilidade.
 type MenuItemProps = {
   href: any;
   icon: React.ComponentProps<typeof Ionicons>['name'];

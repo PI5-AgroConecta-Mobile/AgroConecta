@@ -39,7 +39,6 @@ const FormRow: React.FC<FormRowProps> = ({ icon, label, value, placeholder, secu
 
 export default function EditarPerfilScreen() {
     const handleSaveChanges = () => {
-        // Lógica para salvar as alterações no futuro
         Alert.alert("Sucesso!", "Seu perfil foi atualizado.", [
             { text: "OK", onPress: () => router.back() }
         ]);

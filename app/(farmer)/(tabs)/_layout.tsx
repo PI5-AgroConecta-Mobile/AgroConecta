@@ -8,7 +8,7 @@ export default function FarmerTabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false, // O cabeçalho já é controlado pelo Drawer de cima
+        headerShown: false, 
         
         // --- Estilos da TabBar (iguais aos do cliente) ---
         tabBarStyle: {

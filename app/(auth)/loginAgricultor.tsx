@@ -60,7 +60,7 @@ export default function LoginAgricultorScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FEFAE0', // Fundo cor creme do PI4
+    backgroundColor: '#FEFAE0', 
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
   },
   input: {
     width: '100%',
-    backgroundColor: 'rgba(40, 54, 24, 0.1)', // Fundo semi-transparente
+    backgroundColor: 'rgba(40, 54, 24, 0.1)', 
     borderRadius: 10,
     paddingVertical: 15,
     paddingHorizontal: 20,
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '100%',
-    backgroundColor: '#283618', // Botão verde escuro
+    backgroundColor: '#283618', 
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
