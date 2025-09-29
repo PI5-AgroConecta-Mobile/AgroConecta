@@ -4,7 +4,7 @@ import { Image, TouchableOpacity, View, Text, StyleSheet } from 'react-native';
 import { useNavigation, router, useSegments } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
 
-// --- SEUS COMPONENTES (Não foram alterados) ---
+// --- SEUS COMPONENTES  ---
 function HeaderTitleLogo() {
   return (
     <Image
