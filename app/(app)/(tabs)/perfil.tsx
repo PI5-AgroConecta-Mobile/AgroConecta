@@ -6,11 +6,10 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  SafeAreaView,
 } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 type MenuItemProps = {
   href: any;
   icon: React.ComponentProps<typeof Ionicons>['name'];

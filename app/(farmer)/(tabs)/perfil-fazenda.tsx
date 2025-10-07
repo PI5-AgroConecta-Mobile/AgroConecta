@@ -6,13 +6,12 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  SafeAreaView,
   TextInput,
   Alert,
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 export default function FarmProfileScreen() {
     // No futuro, estes dados virão da fazenda logada
     const [nomeFazenda, setNomeFazenda] = useState('Horta da Clara');

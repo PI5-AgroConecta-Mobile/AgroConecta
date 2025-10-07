@@ -6,13 +6,12 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  SafeAreaView,
   TextInput,
   Alert,
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 // Componente reutilizável para cada campo do formulário
 type FormRowProps = {
     icon: React.ComponentProps<typeof Ionicons>['name'];

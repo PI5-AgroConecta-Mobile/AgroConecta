@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, ScrollView, Alert, Image } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function GerenciarProdutoScreen() {
     const params = useLocalSearchParams();

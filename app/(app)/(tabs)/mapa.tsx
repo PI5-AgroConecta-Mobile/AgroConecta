@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, ActivityIndicator, FlatList, Image, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, ActivityIndicator, FlatList, Image, TouchableOpacity } from 'react-native';
 import { Link } from 'expo-router';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import * as Location from 'expo-location';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 // --- Tipos e Dados de Exemplo ---
 interface Fazenda {
     id: string;

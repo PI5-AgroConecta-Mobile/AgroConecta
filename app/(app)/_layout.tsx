@@ -4,13 +4,26 @@ import { Image, TouchableOpacity, View, Text, StyleSheet } from 'react-native';
 import { useNavigation, router, useSegments } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
 
-// --- SEUS COMPONENTES  ---
-function HeaderTitleLogo() {
+// --- Componente do Cabeçalho (Não precisa mudar nada aqui) ---
+function CustomHeaderTitle() {
+  const segments = useSegments();
+  const currentPage = segments[segments.length - 1];
+  const pagesWithBackArrow = ['sobre', 'configuracoes', 'detalhesProdutos', '[id]', 'editarPerfil', 'historico'];
+  const shouldShowBackArrow = pagesWithBackArrow.includes(currentPage);
+
   return (
-    <Image
-      style={{ width: 160, height: 45, resizeMode: 'contain' }}
-      source={require('../../assets/images/logo-escura.png')}
-    />
+    <View>
+      <Image
+        style={{ width: 160, height: 45, resizeMode: 'contain' }}
+        source={require('../../assets/images/logo-escura.png')}
+      />
+      {shouldShowBackArrow && (
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#606C38" />
+          <Text style={styles.backButtonText}>Voltar</Text>
+        </TouchableOpacity>
+      )}
+    </View>
   );
 }
 
@@ -24,26 +37,6 @@ function HeaderMenuButton() {
             <Ionicons name="menu" size={32} color="#283618" />
         </TouchableOpacity>
     );
-}
-
-// --- Componente Inteligente para o Cabeçalho ---
-function CustomHeaderTitle() {
-  const segments = useSegments();
-  const currentPage = segments[segments.length - 1];
-  const pagesWithBackArrow = ['sobre', 'configuracoes', 'detalhesProdutos', '[id]'];
-  const shouldShowBackArrow = pagesWithBackArrow.includes(currentPage);
-
-  return (
-    <View>
-      <HeaderTitleLogo />
-      {shouldShowBackArrow && (
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#606C38" />
-          <Text style={styles.backButtonText}>Voltar</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
 }
 
 // --- Layout Principal com Drawer ---
@@ -65,36 +58,40 @@ export default function AppDrawerLayout() {
         headerLeft: () => null,
       }}
     >
+      {/* --- ITENS VISÍVEIS NO MENU --- */}
       <Drawer.Screen
-        name="(tabs)"
+        name="(tabs)" // Linka para o conjunto de abas
         options={{
           drawerLabel: 'Início',
-          title: 'AgroConecta',
-          drawerIcon: ({ size, color }: { size: number; color: string }) => (
+          title: 'AgroConecta', // Título do Header
+          drawerIcon: ({ size, color }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),
         }}
       />
+      {/* AGORA VAI FUNCIONAR: Aponta para os arquivos de redirecionamento que criamos */}
       <Drawer.Screen
-        name="(tabs)/configuracoes"
+        name="configuracoes" // <- MUDANÇA AQUI
         options={{
           drawerLabel: 'Configurações',
           title: 'Configurações',
-          drawerIcon: ({ size, color }: { size: number; color: string }) => (
+          drawerIcon: ({ size, color }) => (
             <Ionicons name="cog-outline" size={size} color={color} />
           ),
         }}
       />
       <Drawer.Screen
-        name="(tabs)/sobre"
+        name="sobre" // <- MUDANÇA AQUI
         options={{
           drawerLabel: 'Sobre',
           title: 'Sobre o App',
-          drawerIcon: ({ size, color }: { size: number; color: string }) => (
+          drawerIcon: ({ size, color }) => (
             <Ionicons name="information-circle-outline" size={size} color={color} />
           ),
         }}
       />
+
+      {/* --- TELAS OCULTAS DO MENU --- */}
        <Drawer.Screen
         name="fazenda/[id]"
         options={{
@@ -105,7 +102,7 @@ export default function AppDrawerLayout() {
   );
 }
 
-// --- Estilos para o botão de voltar ---
+// --- Estilos para o botão de voltar (sem alterações) ---
 const styles = StyleSheet.create({
     backButton: {
         flexDirection: 'row',

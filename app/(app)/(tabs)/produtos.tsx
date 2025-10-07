@@ -5,7 +5,6 @@ import {
   View,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
   FlatList,
   Image,
   ImageSourcePropType,
@@ -15,6 +14,7 @@ import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import Slider from '@react-native-community/slider';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // --- Tipos e Dados de Exemplo (sem alterações) ---
 interface Produto {

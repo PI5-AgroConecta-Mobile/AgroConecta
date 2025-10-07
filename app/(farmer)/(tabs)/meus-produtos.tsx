@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, FlatList, TouchableOpacity, SafeAreaView, Image, Alert, ImageSourcePropType } from 'react-native';
+import { StyleSheet, Text, View, FlatList, TouchableOpacity, Image, Alert, ImageSourcePropType } from 'react-native';
 import { Link, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 interface Produto { id: string; nome: string; preco: string; estoque: string; image: ImageSourcePropType; }
 const meusProdutosInicial: Produto[] = [
     { id: '1', nome: 'Tomate Orgânico', preco: 'R$ 10,99/kg', estoque: '10', image: require('../../../assets/images/tomate.jpg') },

@@ -8,19 +8,17 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false, 
-        
-        // --- Estilos e Cores Padrão e Seguros ---
+        headerShown: false,
         tabBarStyle: {
           backgroundColor: '#283618',
           borderTopWidth: 0,
-          height: 60 + insets.bottom, 
+          height: 60 + insets.bottom,
         },
-        tabBarActiveTintColor: '#FEFAE0', 
-        tabBarInactiveTintColor: '#A9B388', 
+        tabBarActiveTintColor: '#FEFAE0',
+        tabBarInactiveTintColor: '#A9B388',
       }}
     >
-      {/* --- ABAS VISÍVEIS --- */}
+      {/* --- ABAS VISÍVEIS NA BARRA INFERIOR --- */}
       <Tabs.Screen
         name="index"
         options={{
@@ -57,18 +55,13 @@ export default function TabsLayout() {
         }}
       />
 
-         {/* --- TELAS ESCONDIDAS DA BARRA --- */}
+      {/* --- TELAS QUE TÊM A BARRA DE ABAS, MAS ESTÃO ESCONDIDAS DA BARRA --- */}
       <Tabs.Screen name="sobre" options={{ href: null }} />
       <Tabs.Screen name="configuracoes" options={{ href: null }} />
       <Tabs.Screen name="editarPerfil" options={{ href: null }} />
       <Tabs.Screen name="historico" options={{ href: null }} />
-      
-      <Tabs.Screen
-        name="detalhesProdutos" 
-        options={{
-          href: null, 
-        }}
-      />
+      <Tabs.Screen name="detalhesProdutos" options={{ href: null }} />
+
     </Tabs>
   );
 }

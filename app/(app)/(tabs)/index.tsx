@@ -7,13 +7,12 @@ import {
   Image,
   TouchableOpacity,
   FlatList,
-  SafeAreaView,
   ImageBackground,
   ImageSourcePropType,
 } from 'react-native';
 import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 // --- Tipos de Dados ---
 interface Noticia {
   id: string;

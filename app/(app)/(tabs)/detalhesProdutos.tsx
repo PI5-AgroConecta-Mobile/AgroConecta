@@ -6,14 +6,13 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  SafeAreaView,
   Alert,
   ImageSourcePropType,
 } from 'react-native';
 import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 LocaleConfig.locales['pt-br'] = {
   monthNames: ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'],
   dayNames: ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'],

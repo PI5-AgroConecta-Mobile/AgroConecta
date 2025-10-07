@@ -5,7 +5,6 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   Image,
   ImageSourcePropType,
   UIManager,
@@ -14,12 +13,7 @@ import {
 } from 'react-native';
 import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 // --- Tipos de Dados ---
 interface Agendamento {
   id: string;
