@@ -1,10 +1,10 @@
-import { Link, router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
+  SafeAreaView, 
   ScrollView,
   StyleSheet,
   Text,
@@ -13,152 +13,275 @@ import {
   View,
 } from 'react-native';
 
+
+import api from '../../services/api';
+
+import axios from 'axios';
+
 export default function CadastroScreen() {
+  const router = useRouter();
+
+  // Estados do formulário
+  const [nome, setNome] = useState('');
+  const [email, setEmail] = useState('');
+  const [cpf, setCpf] = useState('');
   const [senha, setSenha] = useState('');
-  const [requisitos, setRequisitos] = useState({
-    tamanho: false,
-    maiuscula: false,
-    minuscula: false,
-    numero: false,
-    especial: false,
-  });
+  const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [tipoUsuario, setTipoUsuario] = useState<'cliente' | 'agricultor'>('cliente');
 
-  const verificarRequisitos = (senhaInput: string) => {
-    setRequisitos({
-      tamanho: senhaInput.length >= 8,
-      maiuscula: /[A-Z]/.test(senhaInput),
-      minuscula: /[a-z]/.test(senhaInput),
-      numero: /\d/.test(senhaInput),
-      especial: /[!@#$%^&*(),.?":{}|<>]/.test(senhaInput),
-    });
-  };
+  // Estados de controle da API
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSenhaChange = (text: string) => {
-    setSenha(text);
-    verificarRequisitos(text);
-  };
-  
-  const isSenhaValida = Object.values(requisitos).every(Boolean);
+  // Função de Cadastro
+  const handleCadastro = async () => {
+    setError(null);
 
-  const handleSubmit = () => {
-    if (!isSenhaValida) {
-      Alert.alert('Senha Inválida', 'Por favor, certifique-se de que sua senha atende a todos os requisitos.');
+    // 1. Validação no Front-end
+    if (!nome || !email || !cpf || !senha || !confirmarSenha) {
+      setError('Por favor, preencha todos os campos.');
       return;
     }
-    // Lógica de cadastro aqui
-    Alert.alert('Sucesso!', 'Cadastro realizado com sucesso.', [
-      { text: 'OK', onPress: () => router.replace('/(auth)/loginCliente') },
-    ]);
+    if (senha !== confirmarSenha) {
+      setError('As senhas não coincidem.');
+      return;
+    }
+
+    setLoading(true);
+
+    // 2. Mapear 'tipoUsuario' (string) para 'userType' (Int)
+    // Assumindo 0 = cliente, 1 = agricultor
+    const userType = tipoUsuario === 'cliente' ? 0 : 1;
+
+    try {
+      // 3. Chamar a API
+      await api.post('/createUser', {
+        name: nome,
+        email: email,
+        password: senha,
+        cpfcnpj: cpf,
+        userType: userType,
+      });
+
+      // 4. Sucesso
+      setLoading(false);
+      Alert.alert(
+        'Cadastro realizado!',
+        'Sua conta foi criada com sucesso. Faça o login para continuar.',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.push(
+              tipoUsuario === 'cliente' ? '/(auth)/loginCliente' : '/(auth)/loginAgricultor'
+            ),
+          },
+        ]
+      );
+    } catch (err) {
+      // 5. Tratamento de Erro
+      setLoading(false);
+      if (axios.isAxiosError(err) && err.response) {
+        setError(err.response.data.err || 'Não foi possível criar a conta.');
+      } else {
+        setError('Não foi possível conectar ao servidor. Tente novamente.');
+      }
+      console.error(err);
+    }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Image
-          source={require('../../assets/images/logo-escura.png')}
-          style={styles.logo}
-        />
-        <Text style={styles.title}>Criar Conta</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#283618" />
+          </TouchableOpacity>
+        </View>
 
-        <TextInput placeholder="Nome completo" style={styles.input} />
+        <Text style={styles.title}>Criar sua Conta</Text>
+        <Text style={styles.subtitle}>
+          Vamos começar! Escolha seu tipo de perfil.
+        </Text>
+
+        {/* Seletor de Tipo de Usuário */}
+        <View style={styles.tipoUsuarioContainer}>
+          <TouchableOpacity
+            style={[
+              styles.tipoButton,
+              tipoUsuario === 'cliente' && styles.tipoButtonActive,
+            ]}
+            onPress={() => setTipoUsuario('cliente')}>
+            <Ionicons
+              name="person-outline"
+              size={24}
+              color={tipoUsuario === 'cliente' ? '#FEFAE0' : '#283618'}
+            />
+            <Text
+              style={[
+                styles.tipoButtonText,
+                tipoUsuario === 'cliente' && styles.tipoButtonTextActive,
+              ]}>
+              Sou Cliente
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tipoButton,
+              tipoUsuario === 'agricultor' && styles.tipoButtonActive,
+            ]}
+            onPress={() => setTipoUsuario('agricultor')}>
+            <Ionicons
+              name="leaf-outline"
+              size={24}
+              color={tipoUsuario === 'agricultor' ? '#FEFAE0' : '#283618'}
+            />
+            <Text
+              style={[
+                styles.tipoButtonText,
+                tipoUsuario === 'agricultor' && styles.tipoButtonTextActive,
+              ]}>
+              Sou Agricultor
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Inputs do Formulário */}
         <TextInput
-          placeholder="Email"
           style={styles.input}
+          placeholder="Nome Completo"
+          value={nome}
+          onChangeText={setNome}
+          autoCapitalize="words"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="E-mail"
+          value={email}
+          onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
         />
         <TextInput
-          placeholder="Senha"
           style={styles.input}
-          secureTextEntry
-          value={senha}
-          onChangeText={handleSenhaChange}
+          placeholder="CPF"
+          value={cpf}
+          onChangeText={setCpf}
+          keyboardType="numeric"
         />
-        
-        {/* Requisitos da Senha */}
-        <View style={styles.requisitosContainer}>
-          <Text style={requisitos.tamanho ? styles.valido : styles.invalido}>
-            ✓ No mínimo 8 caracteres
-          </Text>
-          <Text style={requisitos.maiuscula ? styles.valido : styles.invalido}>
-            ✓ Pelo menos 1 letra maiúscula
-          </Text>
-          <Text style={requisitos.minuscula ? styles.valido : styles.invalido}>
-            ✓ Pelo menos 1 letra minúscula
-          </Text>
-          <Text style={requisitos.numero ? styles.valido : styles.invalido}>
-            ✓ Pelo menos 1 número
-          </Text>
-          <Text style={requisitos.especial ? styles.valido : styles.invalido}>
-            ✓ Pelo menos 1 caractere especial
-          </Text>
-        </View>
+        <TextInput
+          style={styles.input}
+          placeholder="Senha"
+          value={senha}
+          onChangeText={setSenha}
+          secureTextEntry
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Confirmar Senha"
+          value={confirmarSenha}
+          onChangeText={setConfirmarSenha}
+          secureTextEntry
+        />
 
-        <TextInput placeholder="CPF" style={styles.input} keyboardType="numeric" />
-        <TextInput placeholder="CEP" style={styles.input} keyboardType="numeric" />
+        {/* Exibição de Erro */}
+        {error && <Text style={styles.errorText}>{error}</Text>}
 
+        {/* Botão de Cadastro */}
         <TouchableOpacity
-          style={[styles.button, !isSenhaValida && styles.buttonDisabled]}
-          onPress={handleSubmit}
-          disabled={!isSenhaValida}>
-          <Text style={styles.buttonText}>Cadastrar</Text>
+          style={[styles.button, loading && styles.buttonDisabled]}
+          onPress={handleCadastro}
+          disabled={loading}>
+          {loading ? (
+            <ActivityIndicator size="small" color="#FEFAE0" />
+          ) : (
+            <Text style={styles.buttonText}>Cadastrar</Text>
+          )}
         </TouchableOpacity>
 
-        <Link href="/(auth)/loginCliente" style={styles.backLink}>
-          <Text>Voltar para o Login</Text>
-        </Link>
+        <Text style={styles.footerText}>
+          Já tem uma conta?{' '}
+          <Link href="/(auth)" asChild>
+            <Text style={styles.footerLink}>Faça Login</Text>
+          </Link>
+        </Text>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
+// --- Estilos ---
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#FEFAE0',
+    backgroundColor: '#F8F7F2',
   },
-  scrollContainer: {
+  container: {
     flexGrow: 1,
-    alignItems: 'center',
+    padding: 25,
     justifyContent: 'center',
-    padding: 20,
   },
-  logo: {
-    width: 200,
-    height: 60,
-    resizeMode: 'contain',
-    marginBottom: 20,
+  header: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+  },
+  backButton: {
+    padding: 10,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#283618',
+    textAlign: 'center',
+    marginBottom: 10,
+    marginTop: 60, // Espaço para o botão de voltar
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#606C38',
+    textAlign: 'center',
     marginBottom: 20,
   },
-  input: {
-    width: '100%',
-    backgroundColor: 'rgba(40, 54, 24, 0.05)',
-    borderRadius: 10,
+  tipoUsuarioContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  tipoButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: 15,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#DADADA',
+    marginHorizontal: 5,
+  },
+  tipoButtonActive: {
+    backgroundColor: '#606C38',
+    borderColor: '#606C38',
+  },
+  tipoButtonText: {
     fontSize: 16,
+    fontWeight: '600',
     color: '#283618',
-    marginBottom: 10,
+    marginLeft: 10,
   },
-  requisitosContainer: {
-    width: '100%',
+  tipoButtonTextActive: {
+    color: '#FEFAE0',
+  },
+  input: {
+    height: 50,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    fontSize: 16,
     marginBottom: 15,
-    paddingLeft: 5,
-  },
-  valido: {
-    color: 'green',
-  },
-  invalido: {
-    color: 'red',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
   button: {
-    width: '100%',
     backgroundColor: '#283618',
     padding: 15,
     borderRadius: 10,
@@ -170,12 +293,23 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#FEFAE0',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
-  backLink: {
+  footerText: {
     marginTop: 20,
-    fontSize: 16,
+    textAlign: 'center',
+    color: '#555',
+  },
+  footerLink: {
     color: '#283618',
+    fontWeight: 'bold',
+  },
+  errorText: {
+    color: '#D90429',
+    textAlign: 'center',
+    marginBottom: 10,
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

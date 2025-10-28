@@ -1,41 +1,39 @@
-import React, { useState, useMemo, useRef } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  Image,
-  ImageSourcePropType,
-  Switch,
-} from 'react-native';
-import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import Slider from '@react-native-community/slider';
+import { Link } from 'expo-router';
+import React, { useEffect, useMemo, useRef, useState } from 'react'; 
+import {
+    ActivityIndicator,
+    FlatList,
+    Image,
+    ImageSourcePropType,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// --- Tipos e Dados de Exemplo (sem alterações) ---
+import api from '../../../services/api'; 
+import { ApiProduct } from '../../../types/api.types'; 
+
 interface Produto {
   id: string; nome: string; preco: string; produtor: string;
   categoria: 'Frutas' | 'Verduras' | 'Laticínios' | 'Outros';
   distancia: number; organico: boolean; image: ImageSourcePropType;
 }
-const todosOsProdutos: Produto[] = [
-    { id: '1', nome: 'Tomate Orgânico', produtor: 'Horta da Clara', preco: 'R$ 10,99/kg', categoria: 'Frutas', distancia: 2.5, organico: true, image: require('../../../assets/images/tomate.jpg') },
-    { id: '2', nome: 'Alface Crespa', produtor: 'Sítio Verde', preco: 'R$ 3,50/un', categoria: 'Verduras', distancia: 5.1, organico: false, image: require('../../../assets/images/alface.jpg') },
-    { id: '3', nome: 'Cenoura Fresca', produtor: 'Fazenda Feliz', preco: 'R$ 5,00/kg', categoria: 'Verduras', distancia: 8.3, organico: false, image: require('../../../assets/images/cenoura.jpg') },
-    { id: '4', nome: 'Queijo Minas', produtor: 'Laticínios da Serra', preco: 'R$ 25,00/kg', categoria: 'Laticínios', distancia: 12.0, organico: false, image: require('../../../assets/images/queijominas.jpg') },
-    { id: '5', nome: 'Ovos Caipira', produtor: 'Galinheiro do Zé', preco: 'R$ 15,00/dúzia', categoria: 'Laticínios', distancia: 4.2, organico: true, image: require('../../../assets/images/ovos.jpg') },
-    { id: '6', nome: 'Mel Silvestre', produtor: 'Apiário do Sol', preco: 'R$ 30,00/pote', categoria: 'Outros', distancia: 15.5, organico: true, image: require('../../../assets/images/mel.jpg') },
-];
+
 const categorias = ['Todos', 'Frutas', 'Verduras', 'Laticínios', 'Outros'];
-const parsePrice = (priceString: string): number => parseFloat(priceString.replace('R$', '').replace(',', '.').trim());
+const parsePrice = (priceString: string): number => {
+  const numericString = priceString.split('/')[0].replace('R$', '').replace(',', '.').trim();
+  return parseFloat(numericString) || 0;
+};
 
 const ProductCard = ({ item }: { item: Produto }) => ( <Link href={`/detalhesProdutos?id=${item.id}`} asChild><TouchableOpacity style={styles.productCard}><Image source={item.image} style={styles.productImage} /><Text style={styles.productName} numberOfLines={1}>{item.nome}</Text><Text style={styles.producerName}>{item.produtor}</Text><Text style={styles.productPrice}>{item.preco}</Text></TouchableOpacity></Link> );
 
-// --- Tela Principal do Catálogo ---
 export default function ProdutosScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const [filters, setFilters] = useState({
@@ -45,16 +43,63 @@ export default function ProdutosScreen() {
         apenasOrganicos: false,
     });
     const [tempFilters, setTempFilters] = useState(filters);
+    const [produtos, setProdutos] = useState<Produto[]>([]); 
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+      const fetchProducts = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          const response = await api.get<ApiProduct[]>('/listProduct');
+          const mappedProducts: Produto[] = response.data.map(p => {
+            const mapCategoria = (type: number): 'Frutas' | 'Verduras' | 'Laticínios' | 'Outros' => {
+              if (type === 1) return 'Frutas';
+              if (type === 2) return 'Verduras';
+              if (type === 3) return 'Laticínios';
+              return 'Outros';
+            };
+
+            const mapUnidade = (unityType: number): string => {
+              if (unityType === 1) return 'kg';
+              if (unityType === 2) return 'un';
+              return 'dúzia';
+            };
+            
+            return {
+              id: p.id,
+              nome: p.name,
+              preco: `R$ ${p.price.toFixed(2).replace('.', ',')}/${mapUnidade(p.unityType)}`, 
+              produtor: `Produtor ID: ${p.ownerId.substring(0, 5)}...`, 
+              categoria: mapCategoria(p.type),
+              distancia: 5.0, 
+              organico: p.harvestType === 1, 
+              image: { uri: p.imgUrl } 
+            };
+          });
+
+          setProdutos(mappedProducts);
+
+        } catch (err) {
+          console.error("Erro ao buscar produtos:", err);
+          setError("Não foi possível carregar os produtos.");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchProducts();
+    }, []); 
     const filteredProducts = useMemo(() => {
-        return todosOsProdutos.filter(p => 
+       return produtos.filter(p => 
             (filters.categoria === 'Todos' || p.categoria === filters.categoria) &&
             (p.distancia <= filters.distanciaMax) &&
             (parsePrice(p.preco) <= filters.precoMax) &&
             (!filters.apenasOrganicos || p.organico === true) &&
             (p.nome.toLowerCase().includes(searchQuery.toLowerCase()) || p.produtor.toLowerCase().includes(searchQuery.toLowerCase()))
         );
-    }, [searchQuery, filters]);
-    
+    }, [searchQuery, filters, produtos]); 
     const bottomSheetRef = useRef<BottomSheet>(null);
     const snapPoints = useMemo(() => ['75%', '90%'], []);
     const openFilters = () => {
@@ -66,6 +111,7 @@ export default function ProdutosScreen() {
         bottomSheetRef.current?.close();
     };
 
+  // --- RENDERIZAÇÃO ---
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -79,23 +125,33 @@ export default function ProdutosScreen() {
             </TouchableOpacity>
         </View>
 
-        <FlatList
-            data={filteredProducts} keyExtractor={item => item.id} numColumns={2}
-            renderItem={({ item }) => <ProductCard item={item} />}
-            contentContainerStyle={styles.productGrid}
-            ListEmptyComponent={ <View style={styles.emptyContainer}><Ionicons name="sad-outline" size={60} color="#A9A9A9" /><Text style={styles.emptyText}>Nenhum produto encontrado.</Text></View>}
-        />
+        {loading ? (
+          <View style={styles.emptyContainer}>
+            <ActivityIndicator size="large" color="#283618" />
+            <Text style={styles.emptyText}>Buscando produtos...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="alert-circle-outline" size={60} color="#A9A9A9" />
+            <Text style={styles.emptyText}>{error}</Text>
+          </View>
+        ) : (
+          <FlatList
+              data={filteredProducts} keyExtractor={item => item.id} numColumns={2}
+              renderItem={({ item }) => <ProductCard item={item} />}
+              contentContainerStyle={styles.productGrid}
+              ListEmptyComponent={ <View style={styles.emptyContainer}><Ionicons name="sad-outline" size={60} color="#A9A9A9" /><Text style={styles.emptyText}>Nenhum produto encontrado.</Text></View>}
+          />
+        )}
       </View>
 
-      <BottomSheet ref={bottomSheetRef} index={-1} snapPoints={snapPoints} enablePanDownToClose backgroundStyle={{ backgroundColor: '#F8F7F2' }}>
+     <BottomSheet ref={bottomSheetRef} index={-1} snapPoints={snapPoints} enablePanDownToClose backgroundStyle={{ backgroundColor: '#F8F7F2' }}>
           <BottomSheetView style={styles.sheetContainer}>
               <Text style={styles.sheetTitle}>Filtros</Text>
-
-              {/* MUDANÇA AQUI: Filtro de Categoria em Grelha 2x2 */}
               <Text style={styles.filterLabel}>Categoria</Text>
               <View style={styles.categoryGridContainer}>
                   {categorias.map(cat => (
-                      <TouchableOpacity key={cat} onPress={() => setTempFilters({...tempFilters, categoria: cat})} style={[styles.categoryChip, tempFilters.categoria === cat && styles.categoryChipActive]}>
+                      <TouchableOpacity key={cat} onPress={() => setTempFilters({...tempFilters, categoria: cat as any})} style={[styles.categoryChip, tempFilters.categoria === cat && styles.categoryChipActive]}>
                           <Text style={[styles.categoryText, tempFilters.categoria === cat && styles.categoryTextActive]}>{cat}</Text>
                       </TouchableOpacity>
                   ))}
@@ -103,7 +159,7 @@ export default function ProdutosScreen() {
 
               {/* Filtro de Distância */}
               <Text style={styles.filterLabel}>Distância Máxima: até {tempFilters.distanciaMax.toFixed(0)} km</Text>
-              <Slider style={{ width: '100%', height: 40, marginBottom: 20 }} minimumValue={1} maximumValue={50} step={1} value={tempFilters.distanciaMax} onValue-Change={(value: any) => setTempFilters({...tempFilters, distanciaMax: value})} minimumTrackTintColor="#283618" maximumTrackTintColor="#D1D1D1" thumbTintColor="#283618"/>
+              <Slider style={{ width: '100%', height: 40, marginBottom: 20 }} minimumValue={1} maximumValue={50} step={1} value={tempFilters.distanciaMax} onValueChange={(value) => setTempFilters({...tempFilters, distanciaMax: value})} minimumTrackTintColor="#283618" maximumTrackTintColor="#D1D1D1" thumbTintColor="#283618"/>
 
               {/* Filtro de Preço */}
               <Text style={styles.filterLabel}>Preço Máximo: até R$ {tempFilters.precoMax.toFixed(2)}</Text>
@@ -129,7 +185,6 @@ export default function ProdutosScreen() {
   );
 }
 
-// --- Estilos ---
 const styles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: '#F8F7F2' },
     container: { flex: 1 },
@@ -138,14 +193,27 @@ const styles = StyleSheet.create({
     searchIcon: { marginRight: 8 },
     searchInput: { flex: 1, height: '100%', fontSize: 16 },
     filterButton: { backgroundColor: '#283618', padding: 12, borderRadius: 10, marginLeft: 10, elevation: 2 },
-    productGrid: { paddingHorizontal: 15 },
+    productGrid: { paddingHorizontal: 15, paddingBottom: 15 }, // Adicionei paddingBottom
     productCard: { backgroundColor: '#FFFFFF', borderRadius: 10, flex: 1, margin: 5, padding: 10, elevation: 2, alignItems: 'center' },
     productImage: { width: '100%', height: 120, borderRadius: 8 },
     productName: { fontSize: 16, fontWeight: '600', marginTop: 8, color: '#283618', textAlign: 'center' },
     producerName: { fontSize: 12, color: '#888', marginTop: 2 },
     productPrice: { fontSize: 15, fontWeight: 'bold', color: '#606C38', marginTop: 6 },
-    emptyContainer: { flex: 1, marginTop: '20%', alignItems: 'center', justifyContent: 'center' },
-    emptyText: { fontSize: 18, color: '#A9A9A9', marginTop: 15 },
+    
+    emptyContainer: {
+        flex: 1,
+        marginTop: '20%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 20, 
+    },
+    emptyText: {
+        fontSize: 18,
+        color: '#A9A9A9',
+        marginTop: 15,
+        textAlign: 'center', 
+    },
+    
     sheetContainer: { flex: 1, paddingHorizontal: 20 },
     sheetTitle: { fontSize: 22, fontWeight: 'bold', color: '#283618', textAlign: 'center', marginBottom: 20 },
     filterLabel: { fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 15 },
@@ -168,7 +236,7 @@ const styles = StyleSheet.create({
     categoryText: { fontSize: 14, fontWeight: '600', color: '#606C38' },
     categoryTextActive: { color: '#FFFFFF' },
     switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 },
-    sheetFooter: { flexDirection: 'row', marginTop: 'auto', gap: 15, paddingVertical: 10 },
+    sheetFooter: { flexDirection: 'row', marginTop: 'auto', gap: 15, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#EEE' }, // Adicionado borda
     clearButton: { flex: 1, padding: 15, borderRadius: 10, borderWidth: 1, borderColor: '#B0B0B0', alignItems: 'center' },
     clearButtonText: { color: '#555', fontSize: 16, fontWeight: 'bold' },
     applyButton: { flex: 2, padding: 15, borderRadius: 10, backgroundColor: '#283618', alignItems: 'center' },
