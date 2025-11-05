@@ -10,24 +10,8 @@ import {
 import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-type MenuItemProps = {
-  href: any;
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-  label: string;
-  isLogout?: boolean;
-};
+import { MenuItem } from '@/components/MenuItem';
 
-const MenuItem = ({ href, icon, label, isLogout = false }: MenuItemProps) => (
-    <Link href={href} asChild>
-        <TouchableOpacity style={styles.menuItem}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Ionicons name={icon} size={24} color={isLogout ? '#C70039' : '#283618'} />
-                <Text style={[styles.menuItemText, isLogout && { color: '#C70039' }]}>{label}</Text>
-            </View>
-            {!isLogout && <Ionicons name="chevron-forward-outline" size={22} color="#A9A9A9" />}
-        </TouchableOpacity>
-    </Link>
-);
 
 // --- TELA DE PERFIL ---
 export default function PerfilScreen() {

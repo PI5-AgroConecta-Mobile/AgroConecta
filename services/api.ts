@@ -7,7 +7,7 @@ import axios from 'axios';
 //
 // Para achar seu IP no Windows: abra o cmd e digite `ipconfig` (procure por Endereço IPv4)
 
-const baseURL = 'http://10.68.77.34:3333';
+const baseURL = 'http://10.212.25.134:3333';
 
 const api = axios.create({
   baseURL: baseURL,

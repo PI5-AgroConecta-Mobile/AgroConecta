@@ -1,10 +1,9 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView, Dimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActionButton } from '@/components/ActionButton';
 import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import React from 'react';
+import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LineChart } from "react-native-chart-kit";
-import { TouchableOpacity } from 'react-native-gesture-handler';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // --- Componente StatCard  ---
 const StatCard = ({ icon, label, value, color }: { icon: any, label: string, value: string | number, color: string }) => (
@@ -27,15 +26,15 @@ const ListItem = ({ title, subtitle, icon, iconColor }: { title: string, subtitl
     </View>
 );
 
-type ActionButtonProps = { href: any; icon: React.ComponentProps<typeof Ionicons>['name']; label: string; };
-const ActionButton = ({ href, icon, label }: ActionButtonProps) => (
+/*type ActionButtonProps = { href: any; icon: React.ComponentProps<typeof Ionicons>['name']; label: string; };
+export const ActionButton = ({ href, icon, label }: ActionButtonProps) => (
     <Link href={href} asChild>
         <TouchableOpacity style={styles.actionButton}>
             <Ionicons name={icon} size={28} color="#1B5E20" />
             <Text style={styles.actionButtonText}>{label}</Text>
         </TouchableOpacity>
     </Link>
-);
+);*/
 
 
 // --- Tela Principal do Dashboard ---
