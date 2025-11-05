@@ -1,133 +1,100 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   StyleSheet,
   Text,
   View,
-  ScrollView,
-  Image,
+  SafeAreaView,
   TouchableOpacity,
-  TextInput,
   Alert,
 } from 'react-native';
-import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-export default function FarmProfileScreen() {
-    // No futuro, estes dados virão da fazenda logada
-    const [nomeFazenda, setNomeFazenda] = useState('Horta da Clara');
-    const [endereco, setEndereco] = useState('Estrada do Sol, 123, Piracicaba-SP');
-    const [horarios, setHorarios] = useState('Segunda a Sábado, das 8:00 às 16:00');
-    const [descricao, setDescricao] = useState('Cultivamos alimentos orgânicos com muito carinho e respeito pela natureza.');
 
-    const handleSaveChanges = () => {
-        Alert.alert("Sucesso!", "O perfil da sua fazenda foi atualizado.", [
-            { text: "OK", onPress: () => router.back() }
-        ]);
-    };
+// 1. Importe o hook de autenticação (caminho também é 3 níveis acima)
+import { useAuth } from '../../../context/AuthContext';
+
+export default function PerfilFazendaScreen() {
+  
+  // 2. Pegue a função signOut e os dados do utilizador
+  const { signOut, user } = useAuth();
+
+  // 3. Crie a função de logout
+  const handleLogout = () => {
+    Alert.alert(
+      "Sair da Conta",
+      "Tem a certeza de que deseja sair?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { 
+          text: "Sim, Sair", 
+          onPress: () => signOut(), // <-- Chama a função do AuthContext
+          style: "destructive"
+        }
+      ]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView>
-        <View style={styles.container}>
-            {/* Seção da Foto de Capa */}
-            <View style={styles.coverPicContainer}>
-                <Image
-                    source={require('../../../assets/images/fazenda1.jpg')}
-                    style={styles.coverImage}
-                />
-                <TouchableOpacity style={styles.changePicButton}>
-                    <Ionicons name="camera-outline" size={24} color="#FFFFFF" />
-                </TouchableOpacity>
-            </View>
+      <View style={styles.container}>
+        <Text style={styles.title}>Perfil da Fazenda</Text>
+        
+        {user && (
+          <Text style={styles.userInfo}>
+            Sessão iniciada como: {user.name}
+          </Text>
+        )}
 
-            {/* Formulário de Edição */}
-            <Text style={styles.sectionTitle}>Informações da Fazenda</Text>
-            <View style={styles.form}>
-                <Text style={styles.label}>Nome da Fazenda</Text>
-                <TextInput style={styles.input} value={nomeFazenda} onChangeText={setNomeFazenda} />
+        {/* (Aqui entraria o resto do seu perfil de fazenda) */}
 
-                <Text style={styles.label}>Endereço</Text>
-                <TextInput style={styles.input} value={endereco} onChangeText={setEndereco} />
+        {/* 4. O Botão de Logout */}
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={24} color="#D90429" />
+          <Text style={styles.logoutButtonText}>Sair da Conta</Text>
+        </TouchableOpacity>
 
-                <Text style={styles.label}>Horários de Retirada</Text>
-                <TextInput style={styles.input} value={horarios} onChangeText={setHorarios} />
-
-                <Text style={styles.label}>Descrição Curta</Text>
-                <TextInput style={[styles.input, styles.textArea]} multiline value={descricao} onChangeText={setDescricao} />
-            </View>
-        </View>
-      </ScrollView>
-      <View style={styles.footer}>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSaveChanges}>
-              <Text style={styles.saveButtonText}>Salvar Alterações</Text>
-          </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
 
+// --- Estilos (Idênticos ao do Cliente) ---
 const styles = StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: '#F0F4F8' },
-    container: { paddingBottom: 20 },
-    coverPicContainer: {
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    coverImage: {
-        width: '100%',
-        height: 180,
-    },
-    changePicButton: {
-        position: 'absolute',
-        bottom: 10,
-        right: 10,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        padding: 8,
-        borderRadius: 20,
-    },
-    form: {
-        paddingHorizontal: 20,
-    },
-    sectionTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#1B5E20',
-        paddingHorizontal: 20,
-        marginBottom: 15,
-    },
-    label: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#333',
-        marginBottom: 8,
-    },
-    input: {
-        backgroundColor: '#FFFFFF',
-        paddingHorizontal: 15,
-        paddingVertical: 12,
-        borderRadius: 8,
-        fontSize: 16,
-        borderWidth: 1,
-        borderColor: '#DDD',
-        marginBottom: 20,
-    },
-    textArea: {
-        height: 100,
-        textAlignVertical: 'top',
-    },
-    footer: {
-        padding: 20,
-        backgroundColor: '#F0F4F8',
-    },
-    saveButton: {
-        backgroundColor: '#2E7D32',
-        padding: 15,
-        borderRadius: 10,
-        alignItems: 'center',
-    },
-    saveButtonText: {
-        color: '#FFFFFF',
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F8F7F2',
+  },
+  container: {
+    flex: 1,
+    padding: 20,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#283618',
+    marginBottom: 20,
+  },
+  userInfo: {
+    fontSize: 16,
+    color: '#606C38',
+    textAlign: 'center',
+    marginBottom: 30,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    padding: 15,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#D90429',
+    marginTop: 'auto', // Coloca o botão no final
+    marginBottom: 20,
+  },
+  logoutButtonText: {
+    color: '#D90429',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 10,
+  },
 });

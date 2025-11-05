@@ -1,205 +1,199 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
   View,
-  ScrollView,
-  TouchableOpacity,
+  SafeAreaView,
+  FlatList,
+  ActivityIndicator,
   Image,
-  ImageSourcePropType,
-  UIManager,
-  Platform,
-  LayoutAnimation,
+  RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
-import { Link } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-// --- Tipos de Dados ---
+
+import api from '../../../services/api'; 
+import { useAuth } from '../../../context/AuthContext'; // Para o ID do cliente (embora a API já saiba)
+
 interface Agendamento {
   id: string;
-  produtoNome: string;
-  produtoImagem: ImageSourcePropType;
-  quantidade: string;
-  precoTotal: string;
-  dia: string;
-  horario: string;
-  fazendaNome: string;
-  fazendaEndereco: string;
-  pagamentos: string[];
+  quantity: number;
+  totalPrice: number;
+  status: number; // 0: Pendente, 1: Confirmado, 2: Cancelado
+  scheduledFor: string; 
+  product: {
+    name: string;
+    imgUrl: string;
+  };
+  farmer: {
+    name: string;
+    contact: string;
+  };
 }
 
-// --- Dados de Exemplo ---
-const meusAgendamentos: Agendamento[] = [
-  {
-    id: '1',
-    produtoNome: 'Tomate Orgânico',
-    produtoImagem: require('../../../assets/images/tomate.jpg'),
-    quantidade: '2 kg',
-    precoTotal: 'R$ 21,98',
-    dia: '25 de Setembro, 2025',
-    horario: '10:00 - 11:00',
-    fazendaNome: 'Horta da Clara',
-    fazendaEndereco: 'Estrada do Sol, 123 - Bairro Verde, Piracicaba-SP',
-    pagamentos: ['Dinheiro', 'Pix', 'Cartão de Débito'],
-  },
-  {
-    id: '2',
-    produtoNome: 'Ovos Caipira',
-    produtoImagem: require('../../../assets/images/ovos.jpg'),
-    quantidade: '1 dúzia',
-    precoTotal: 'R$ 15,00',
-    dia: '28 de Setembro, 2025',
-    horario: '14:00 - 15:00',
-    fazendaNome: 'Galinheiro do Zé',
-    fazendaEndereco: 'Rua das Flores, 45 - Centro, Limeira-SP',
-    pagamentos: ['Dinheiro', 'Pix'],
-  },
-];
 
+const AgendamentoCard = ({ item }: { item: Agendamento }) => {
 
-// --- Componente do Card de Agendamento Expansível ---
-const AgendamentoCard = ({ agendamento }: { agendamento: Agendamento }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const toggleExpand = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setIsExpanded(!isExpanded);
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
+  };
+  
+  const formatData = (dateISO: string) => {
+    return new Date(dateISO).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'long',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
-  return (
-    <TouchableOpacity style={styles.card} onPress={toggleExpand} activeOpacity={0.8}>
-      <View style={styles.cardHeader}>
-        <Image source={agendamento.produtoImagem} style={styles.productImage} />
-        <View style={styles.headerTextContainer}>
-          <Text style={styles.cardTitle}>{agendamento.produtoNome}</Text>
-          <Text style={styles.cardSubtitle}>{agendamento.fazendaNome}</Text>
-          <Text style={styles.cardInfo}>{agendamento.dia} • {agendamento.horario}</Text>
-        </View>
-        <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={24} color="#606C38" />
-      </View>
+  const getStatusInfo = (status: number): { text: string; color: string } => {
+    if (status === 1) return { text: 'Confirmado', color: '#28A745' };
+    if (status === 2) return { text: 'Cancelado', color: '#D90429' };
+    return { text: 'Pendente', color: '#FFC107' };
+  };
 
-      {/* Conteúdo Expansível */}
-      {isExpanded && (
-        <View style={styles.cardDetails}>
-          <View style={styles.detailRow}>
-            <Ionicons name="location-outline" size={20} color="#606C38" />
-            <Text style={styles.detailText}>{agendamento.fazendaEndereco}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Ionicons name="wallet-outline" size={20} color="#606C38" />
-            <Text style={styles.detailText}>Pagamento: {agendamento.pagamentos.join(', ')}</Text>
-          </View>
-          <Link href="/(app)/(tabs)/mapa" asChild>
-            <TouchableOpacity style={styles.mapButton}>
-              <Text style={styles.mapButtonText}>Ir até a Fazenda</Text>
-              <Ionicons name="navigate-outline" size={20} color="#FEFAE0" />
-            </TouchableOpacity>
-          </Link>
-        </View>
-      )}
-    </TouchableOpacity>
+  const statusInfo = getStatusInfo(item.status);
+
+  return (
+    <View style={styles.card}>
+      <Image 
+        source={{ uri: item.product.imgUrl || 'https://via.placeholder.com/150' }} 
+        style={styles.productImage}
+      />
+      <View style={styles.cardInfo}>
+        <Text style={styles.productName}>{item.product.name}</Text>
+        <Text style={styles.farmerName}>Vendido por: {item.farmer.name}</Text>
+        <Text style={styles.details}>Quantidade: {item.quantity}</Text>
+        <Text style={styles.details}>Total: {formatPrice(item.totalPrice)}</Text>
+        <Text style={styles.date}>Retirada em: {formatData(item.scheduledFor)}</Text>
+      </View>
+      <View style={[styles.statusBadge, { backgroundColor: statusInfo.color }]}>
+        <Text style={styles.statusText}>{statusInfo.text}</Text>
+      </View>
+    </View>
   );
 };
 
-
-// --- Tela Principal de Agendamentos ---
+// --- Ecrã Principal ---
 export default function AgendamentosScreen() {
+  const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+
+  const fetchAgendamentos = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    setError(null);
+    try {
+      const response = await api.get<Agendamento[]>('/myagendamentos/cliente');
+      setAgendamentos(response.data);
+    } catch (err: any) {
+      console.error(err);
+      setError("Não foi possível carregar os seus agendamentos.");
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchAgendamentos();
+    }, [fetchAgendamentos])
+  );
+
+  const renderContent = () => {
+    if (loading) {
+      return <ActivityIndicator size="large" color="#283618" style={styles.centered} />;
+    }
+    if (error) {
+      return <Text style={styles.errorText}>{error}</Text>;
+    }
+    if (agendamentos.length === 0) {
+      return <Text style={styles.emptyText}>Você ainda não fez nenhum agendamento.</Text>;
+    }
+    return (
+      <FlatList
+        data={agendamentos}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <AgendamentoCard item={item} />}
+        contentContainerStyle={styles.listContainer}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={() => fetchAgendamentos(true)} />
+        }
+      />
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container}>
-        <Text style={styles.pageTitle}>Meus Agendamentos</Text>
-        {meusAgendamentos.map(agendamento => (
-          <AgendamentoCard key={agendamento.id} agendamento={agendamento} />
-        ))}
-      </ScrollView>
+      <View style={styles.header}>
+        <Text style={styles.title}>Meus Agendamentos</Text>
+      </View>
+      {renderContent()}
     </SafeAreaView>
   );
 }
 
 // --- Estilos ---
 const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-        backgroundColor: '#F8F7F2',
-    },
-    container: {
-        padding: 15,
-    },
-    pageTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#283618',
-        marginBottom: 20,
-        paddingHorizontal: 5,
-    },
-    card: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        padding: 15,
-        marginBottom: 15,
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: 4 },
-    },
-    cardHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    productImage: {
-        width: 60,
-        height: 60,
-        borderRadius: 8,
-    },
-    headerTextContainer: {
-        flex: 1,
-        marginLeft: 15,
-    },
-    cardTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#283618',
-    },
-    cardSubtitle: {
-        fontSize: 14,
-        color: '#555',
-    },
-    cardInfo: {
-        fontSize: 14,
-        color: '#606C38',
-        marginTop: 4,
-    },
-    cardDetails: {
-        borderTopWidth: 1,
-        borderTopColor: '#F0F0F0',
-        marginTop: 15,
-        paddingTop: 15,
-    },
-    detailRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 10,
-    },
-    detailText: {
-        fontSize: 15,
-        color: '#333',
-        marginLeft: 10,
-        flex: 1, // Para quebrar a linha se o texto for longo
-    },
-    mapButton: {
-        backgroundColor: '#283618',
-        borderRadius: 8,
-        paddingVertical: 12,
-        marginTop: 10,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    mapButtonText: {
-        color: '#FEFAE0',
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginRight: 8,
-    },
+  safeArea: { flex: 1, backgroundColor: '#F8F7F2' },
+  header: { padding: 20, borderBottomWidth: 1, borderBottomColor: '#EEE' },
+  title: { fontSize: 26, fontWeight: 'bold', color: '#283618' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  errorText: { textAlign: 'center', marginTop: 50, fontSize: 16, color: '#D90429' },
+  emptyText: { textAlign: 'center', marginTop: 50, fontSize: 16, color: '#888' },
+  listContainer: { padding: 15 },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 15,
+    elevation: 2,
+    flexDirection: 'row',
+  },
+  productImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
+  cardInfo: {
+    flex: 1,
+    marginLeft: 15,
+    justifyContent: 'center',
+  },
+  productName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#283618',
+  },
+  farmerName: {
+    fontSize: 14,
+    color: '#555',
+  },
+  details: {
+    fontSize: 14,
+    color: '#606C38',
+    marginTop: 2,
+  },
+  date: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+    marginTop: 5,
+  },
+  statusBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+  },
+  statusText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
 });

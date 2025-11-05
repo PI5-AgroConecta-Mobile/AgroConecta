@@ -1,122 +1,222 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
   View,
-  ScrollView,
-  TouchableOpacity,
+  SafeAreaView,
+  FlatList,
+  ActivityIndicator,
   Image,
-  ImageSourcePropType,
-  Alert,
+  RefreshControl,
+  TouchableOpacity,
+  Alert, // <-- Importar Alert
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import api from '../../../services/api'; 
+import axios from 'axios'; // <-- Importar Axios para erros
 
-// --- Tipos de Dados ---
+// 2. Definir o tipo de dados
 interface Agendamento {
   id: string;
-  clienteNome: string;
-  produtoNome: string;
-  produtoImagem: ImageSourcePropType;
-  quantidade: string;
-  dia: string;
-  horario: string;
+  quantity: number;
+  totalPrice: number;
+  status: number; 
+  scheduledFor: string;
+  product: { name: string; imgUrl: string; };
+  client: { name: string; contact: string; };
 }
 
-// --- Dados de Exemplo ---
-const agendamentosPendentes: Agendamento[] = [
-  {
-    id: '1',
-    clienteNome: 'Samer Halat',
-    produtoNome: 'Tomate Orgânico',
-    produtoImagem: require('../../../assets/images/tomate.jpg'),
-    quantidade: '2 kg',
-    dia: '26 de Setembro',
-    horario: '10:00 - 11:00',
-  },
-  {
-    id: '3',
-    clienteNome: 'Ana Paula',
-    produtoNome: 'Queijo Minas',
-    produtoImagem: require('../../../assets/images/queijominas.jpg'),
-    quantidade: '1 kg',
-    dia: '27 de Setembro',
-    horario: '09:00 - 10:00',
-  },
-];
+// 3. Interface para as Props do Card
+interface CardProps {
+  item: Agendamento;
+  onUpdateStatus: (agendamentoId: string, newStatus: number) => void; // Função para atualizar
+}
 
-const historicoAgendamentos: Agendamento[] = [
-    {
-    id: '2',
-    clienteNome: 'Maria Silva',
-    produtoNome: 'Ovos Caipira',
-    produtoImagem: require('../../../assets/images/ovos.jpg'),
-    quantidade: '1 dúzia',
-    dia: '22 de Setembro',
-    horario: '14:00 - 15:00',
-  },
-]
+// --- Componente Card (ATUALIZADO) ---
+const AgendamentoCard = ({ item, onUpdateStatus }: CardProps) => {
 
-// --- Componente do Card de Agendamento ---
-const AgendamentoCard = ({ item, isPendente }: { item: Agendamento, isPendente: boolean }) => (
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
+  };
+  const formatData = (dateISO: string) => {
+    return new Date(dateISO).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' });
+  };
+  const getStatusInfo = (status: number): { text: string; color: string } => {
+    if (status === 1) return { text: 'Confirmado', color: '#28A745' };
+    if (status === 2) return { text: 'Cancelado', color: '#D90429' };
+    return { text: 'Pendente', color: '#FFC107' };
+  };
+  // ...
+  
+  const statusInfo = getStatusInfo(item.status);
+
+  return (
     <View style={styles.card}>
-        <View style={styles.cardHeader}>
-            <Image source={item.produtoImagem} style={styles.productImage} />
-            <View style={styles.headerTextContainer}>
-                <Text style={styles.cardTitle}>{item.produtoNome} ({item.quantidade})</Text>
-                <Text style={styles.cardSubtitle}>Cliente: {item.clienteNome}</Text>
-                <Text style={styles.cardInfo}>{item.dia} • {item.horario}</Text>
-            </View>
+      <Image 
+        source={{ uri: item.product.imgUrl || 'https://via.placeholder.com/150' }} 
+        style={styles.productImage}
+      />
+      <View style={styles.cardInfo}>
+        <Text style={styles.productName}>{item.quantity}x {item.product.name}</Text>
+        <Text style={styles.clientName}>Cliente: {item.client.name}</Text>
+        <Text style={styles.details}>Total: {formatPrice(item.totalPrice)}</Text>
+        <Text style={styles.date}>Retirada em: {formatData(item.scheduledFor)}</Text>
+      </View>
+      <View style={[styles.statusBadge, { backgroundColor: statusInfo.color }]}>
+        <Text style={styles.statusText}>{statusInfo.text}</Text>
+      </View>
+      
+      {/* 4. Botões de Ação (LIGADOS) */}
+      {item.status === 0 && ( // Só mostra botões se estiver Pendente
+        <View style={styles.actionButtons}>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.cancelButton]}
+            onPress={() => onUpdateStatus(item.id, 2)} // 2 = Cancelar
+          >
+            <Ionicons name="close" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.confirmButton]}
+            onPress={() => onUpdateStatus(item.id, 1)} // 1 = Confirmar
+          >
+            <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
-        {isPendente && (
-            <View style={styles.actionsContainer}>
-                <TouchableOpacity style={[styles.actionButton, styles.cancelButton]}>
-                    <Ionicons name="close-circle-outline" size={20} color="#C62828" />
-                    <Text style={[styles.actionButtonText, { color: '#C62828' }]}>Cancelar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.actionButton, styles.confirmButton]}>
-                    <Ionicons name="checkmark-circle-outline" size={20} color="#2E7D32" />
-                    <Text style={[styles.actionButtonText, { color: '#2E7D32' }]}>Confirmar</Text>
-                </TouchableOpacity>
-            </View>
-        )}
+      )}
     </View>
-);
+  );
+};
 
-// --- Tela Principal ---
-export default function FarmerSchedulesScreen() {
+// --- Ecrã Principal (ATUALIZADO) ---
+export default function AgendamentosFarmerScreen() {
+  const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Função para carregar os agendamentos (sem alterações)
+  const fetchAgendamentos = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    setError(null);
+    try {
+      const response = await api.get<Agendamento[]>('/myagendamentos/farmer');
+      setAgendamentos(response.data);
+    } catch (err: any) {
+      console.error(err);
+      setError("Não foi possível carregar os agendamentos recebidos.");
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  }, []);
+
+  // useFocusEffect (sem alterações)
+  useFocusEffect(
+    useCallback(() => {
+      fetchAgendamentos();
+    }, [fetchAgendamentos])
+  );
+
+  // --- 5. NOVA FUNÇÃO PARA ATUALIZAR O STATUS ---
+  const handleUpdateStatus = async (agendamentoId: string, newStatus: number) => {
+    const actionText = newStatus === 1 ? "Confirmar" : "Cancelar";
+    
+    Alert.alert(
+      `${actionText} Agendamento`,
+      `Tem a certeza de que deseja ${actionText.toLowerCase()} este pedido?`,
+      [
+        { text: "Voltar", style: "cancel" },
+        {
+          text: `Sim, ${actionText}`,
+          style: newStatus === 1 ? "default" : "destructive",
+          onPress: async () => {
+            try {
+              // 1. Chamar a nova API
+              await api.put(`/updateAgendamentoStatus/${agendamentoId}`, {
+                status: newStatus 
+              });
+
+              // 2. Atualizar a lista localmente (mais rápido)
+              // ou recarregar da API
+              setAgendamentos(prev =>
+                prev.map(ag =>
+                  ag.id === agendamentoId ? { ...ag, status: newStatus } : ag
+                )
+              );
+              // await fetchAgendamentos(false); // Alternativa
+              
+            } catch (err) {
+              if (axios.isAxiosError(err) && err.response) {
+                Alert.alert("Erro", err.response.data.err);
+              } else {
+                Alert.alert("Erro", `Não foi possível ${actionText.toLowerCase()} o pedido.`);
+              }
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // 8. Renderização (Atualizada para passar a nova função)
+  const renderContent = () => {
+    if (loading) {
+      return <ActivityIndicator size="large" color="#283618" style={styles.centered} />;
+    }
+    if (error) {
+      return <Text style={styles.errorText}>{error}</Text>;
+    }
+    if (agendamentos.length === 0) {
+      return <Text style={styles.emptyText}>Você ainda não recebeu nenhum pedido.</Text>;
+    }
+    return (
+      <FlatList
+        data={agendamentos}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <AgendamentoCard 
+            item={item} 
+            onUpdateStatus={handleUpdateStatus} // <-- Passa a função
+          />
+        )}
+        contentContainerStyle={styles.listContainer}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={() => fetchAgendamentos(true)} />
+        }
+      />
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.pageTitle}>Agendamentos Recebidos</Text>
-        
-        <Text style={styles.sectionTitle}>Pendentes de Confirmação</Text>
-        {agendamentosPendentes.map(item => <AgendamentoCard key={item.id} item={item} isPendente={true} />)}
-
-        <Text style={styles.sectionTitle}>Histórico</Text>
-        {historicoAgendamentos.map(item => <AgendamentoCard key={item.id} item={item} isPendente={false} />)}
-
-      </ScrollView>
+      <View style={styles.header}>
+        <Text style={styles.title}>Agendamentos Recebidos</Text>
+      </View>
+      {renderContent()}
     </SafeAreaView>
   );
 }
 
-// --- Estilos ---
+// --- Estilos (sem alterações da Etapa 35) ---
 const styles = StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: '#F0F4F8' },
-    container: { padding: 15 },
-    pageTitle: { fontSize: 24, fontWeight: 'bold', color: '#1B5E20', marginBottom: 20 },
-    sectionTitle: { fontSize: 18, fontWeight: '600', color: '#333', marginTop: 15, marginBottom: 10, borderBottomWidth: 1, borderBottomColor: '#DDD', paddingBottom: 5 },
-    card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 15, marginBottom: 15, elevation: 2 },
-    cardHeader: { flexDirection: 'row', alignItems: 'center' },
-    productImage: { width: 60, height: 60, borderRadius: 8 },
-    headerTextContainer: { flex: 1, marginLeft: 15 },
-    cardTitle: { fontSize: 18, fontWeight: 'bold', color: '#1B5E20' },
-    cardSubtitle: { fontSize: 14, color: '#555' },
-    cardInfo: { fontSize: 14, color: '#606C38', marginTop: 4 },
-    actionsContainer: { flexDirection: 'row', justifyContent: 'space-around', borderTopWidth: 1, borderTopColor: '#F0F0F0', marginTop: 15, paddingTop: 10 },
-    actionButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 5, paddingHorizontal: 15, borderRadius: 20 },
-    cancelButton: { backgroundColor: '#FFEBEE' },
-    confirmButton: { backgroundColor: '#E8F5E9' },
-    actionButtonText: { marginLeft: 8, fontSize: 14, fontWeight: '600' },
+  // ... (cole os estilos da Etapa 35 aqui)
+  safeArea: { flex: 1, backgroundColor: '#F8F7F2' },
+  header: { padding: 20, borderBottomWidth: 1, borderBottomColor: '#EEE' },
+  title: { fontSize: 26, fontWeight: 'bold', color: '#283618' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  errorText: { textAlign: 'center', marginTop: 50, fontSize: 16, color: '#D90429' },
+  emptyText: { textAlign: 'center', marginTop: 50, fontSize: 16, color: '#888' },
+  listContainer: { padding: 15 },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 10, padding: 10, marginBottom: 15, elevation: 2, flexDirection: 'row' },
+  productImage: { width: 80, height: 100, borderRadius: 8 },
+  cardInfo: { flex: 1, marginLeft: 15, justifyContent: 'center' },
+  productName: { fontSize: 18, fontWeight: 'bold', color: '#283618' },
+  clientName: { fontSize: 14, color: '#555', fontStyle: 'italic' },
+  details: { fontSize: 14, color: '#606C38', marginTop: 2 },
+  date: { fontSize: 14, color: '#333', fontWeight: '500', marginTop: 5 },
+  statusBadge: { position: 'absolute', top: 10, right: 10, paddingVertical: 3, paddingHorizontal: 8, borderRadius: 12 },
+  statusText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 12 },
+  actionButtons: { position: 'absolute', bottom: 10, right: 10, flexDirection: 'row', gap: 8 },
+  actionButton: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', elevation: 2 },
+  cancelButton: { backgroundColor: '#D90429' },
+  confirmButton: { backgroundColor: '#28A745' },
 });

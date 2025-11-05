@@ -1,78 +1,292 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, FlatList, TouchableOpacity, Image, Alert, ImageSourcePropType } from 'react-native';
-import { Link, Stack } from 'expo-router';
+import React, { useState, useCallback } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  SafeAreaView,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  Image,
+  RefreshControl,
+  Alert, // <-- Importar o Alert
+} from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-interface Produto { id: string; nome: string; preco: string; estoque: string; image: ImageSourcePropType; }
-const meusProdutosInicial: Produto[] = [
-    { id: '1', nome: 'Tomate Orgânico', preco: 'R$ 10,99/kg', estoque: '10', image: require('../../../assets/images/tomate.jpg') },
-    { id: '2', nome: 'Alface Crespa', preco: 'R$ 3,50/un', estoque: '30', image: require('../../../assets/images/alface.jpg') },
-    { id: '3', nome: 'Queijo Minas', preco: 'R$ 25,00/kg', estoque: '5', image: require('../../../assets/images/queijominas.jpg') },
-];
+import api from '../../../services/api';
+import { ApiProduct } from '../../../types/api.types';
+import axios from 'axios'; // <-- Importar o Axios para tratar erros
 
-export default function FarmerProductsScreen() {
-    const [meusProdutos, setMeusProdutos] = useState(meusProdutosInicial);
-
-    const handleDelete = (produtoId: string) => {
-        Alert.alert( "Apagar Produto", "Tem a certeza?",
-            [
-                { text: "Cancelar", style: "cancel" },
-                { text: "Apagar", style: "destructive", onPress: () => {
-                    setMeusProdutos(produtosAtuais => produtosAtuais.filter(p => p.id !== produtoId));
-                }}
-            ]
-        );
-    };
-
-    const renderProduto = ({ item }: { item: Produto }) => (
-        <View style={styles.card}>
-            <Image source={item.image} style={styles.productImage} />
-            <View style={styles.productInfo}>
-                <Text style={styles.productName}>{item.nome}</Text>
-                <Text style={styles.productPrice}>{item.preco}</Text>
-                <Text style={styles.productStock}>Estoque: {item.estoque}</Text>
-            </View>
-            <View style={styles.actions}>
-                <Link href={{ pathname: "/gerenciar-produto", params: { id: item.id, nome: item.nome, preco: item.preco, estoque: item.estoque } }} asChild>
-                    <TouchableOpacity style={styles.actionButton}>
-                        <Ionicons name="pencil" size={22} color="#0277BD" />
-                    </TouchableOpacity>
-                </Link>
-                <TouchableOpacity style={styles.actionButton} onPress={() => handleDelete(item.id)}>
-                    <Ionicons name="trash-bin" size={22} color="#C62828" />
-                </TouchableOpacity>
-            </View>
-        </View>
-    );
-
-    return (
-        <SafeAreaView style={styles.safeArea}>
-            <Stack.Screen options={{ headerShown: true, title: "Meus Produtos" }} />
-            <FlatList
-                data={meusProdutos}
-                renderItem={renderProduto}
-                keyExtractor={item => item.id}
-                contentContainerStyle={styles.listContainer}
-            />
-            <Link href="/gerenciar-produto" asChild>
-                <TouchableOpacity style={styles.fab}>
-                    <Ionicons name="add" size={32} color="#FFFFFF" />
-                </TouchableOpacity>
-            </Link>
-        </SafeAreaView>
-    );
+// --- Interface para as props do Card ---
+interface ProductCardProps {
+  item: ApiProduct;
+  onDelete: (productId: string) => void; // Função para apagar
+  onEdit: (product: ApiProduct) => void; // Função para editar
 }
 
+// --- Componente de Card (ATUALIZADO) ---
+const ProductCard = ({ item, onDelete, onEdit }: ProductCardProps) => {
+  
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(price);
+  };
+  
+  return (
+    <View style={styles.productCard}>
+      <Image 
+        source={{ uri: item.imgUrl || 'https://via.placeholder.com/150' }} 
+        style={styles.productImage} 
+      />
+      <View style={styles.productInfo}>
+        <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
+        <Text style={styles.productPrice}>{formatPrice(item.price)}</Text>
+        <Text style={styles.productStatus}>
+          {item.productState ? 'Ativo' : 'Inativo'}
+        </Text>
+      </View>
+      
+      {/* --- NOVOS BOTÕES DE AÇÃO --- */}
+      <View style={styles.actionButtons}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => onEdit(item)}>
+          <Ionicons name="pencil" size={22} color="#606C38" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconButton} onPress={() => onDelete(item.id)}>
+          <Ionicons name="trash" size={22} color="#D90429" />
+        </TouchableOpacity>
+      </View>
+
+    </View>
+  );
+};
+
+// --- Ecrã Principal (ATUALIZADO) ---
+export default function MeusProdutosScreen() {
+  const router = useRouter();
+  
+  const [produtos, setProdutos] = useState<ApiProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Função para carregar os produtos
+  const fetchMyProducts = useCallback(async (showLoading = true) => {
+    if (showLoading) {
+      setLoading(true);
+    }
+    setError(null);
+    try {
+      const response = await api.get('/myproducts');
+      setProdutos(response.data);
+    } catch (err: any) {
+      console.error(err);
+      if (err.response && err.response.status === 401) {
+        setError("Não foi possível verificar a sua sessão.");
+      } else {
+        setError("Não foi possível carregar os seus produtos.");
+      }
+    } finally {
+      if (showLoading) {
+        setLoading(false);
+      }
+    }
+  }, []);
+
+  // useFocusEffect (sem alterações)
+  useFocusEffect(
+    useCallback(() => {
+      fetchMyProducts();
+    }, [fetchMyProducts])
+  );
+
+  // --- NOVA FUNÇÃO DE APAGAR ---
+  const handleDelete = (productId: string) => {
+    Alert.alert(
+      "Apagar Produto",
+      "Tem a certeza de que deseja apagar este produto? Esta ação é irreversível.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Sim, Apagar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // 1. Chamar a API de delete
+              await api.delete(`/deleteProduct/${productId}`);
+              
+              // 2. Atualizar a lista (sem mostrar o "loading" grande)
+              // Opção A: Recarregar da API
+              await fetchMyProducts(false);
+              
+              // Opção B: Remover localmente (mais rápido)
+              // setProdutos(prev => prev.filter(p => p.id !== productId));
+              
+            } catch (err) {
+              if (axios.isAxiosError(err) && err.response) {
+                Alert.alert("Erro", err.response.data.err || "Não foi possível apagar o produto.");
+              } else {
+                Alert.alert("Erro", "Erro de rede ao tentar apagar o produto.");
+              }
+            }
+          },
+        },
+      ]
+    );
+  };
+  
+  const handleEdit = (product: ApiProduct) => {
+    // 1. Navegar para o ecrã de gerenciar-produto
+    // 2. Passar o objeto 'product' inteiro como um parâmetro (convertido para string JSON)
+    router.push({
+      pathname: '/(farmer)/gerenciar-produto',
+      params: { 
+        product: JSON.stringify(product) // <-- Passa os dados
+      }
+    });
+  };
+
+  // Renderização (Atualizada para passar as funções ao card)
+  const renderContent = () => {
+    if (loading) {
+      return <ActivityIndicator size="large" color="#283618" style={styles.centered} />;
+    }
+
+    if (error) {
+      return <Text style={styles.errorText}>{error}</Text>;
+    }
+
+    if (produtos.length === 0) {
+      return <Text style={styles.emptyText}>Você ainda não criou nenhum produto.</Text>;
+    }
+
+    return (
+      <FlatList
+        data={produtos}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <ProductCard 
+            item={item} 
+            onDelete={handleDelete} // <-- Passa a função
+            onEdit={handleEdit}     // <-- Passa a função
+          />
+        )}
+        contentContainerStyle={styles.listContainer}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={() => fetchMyProducts(true)} />
+        }
+      />
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Meus Produtos</Text>
+        <TouchableOpacity 
+          style={styles.addButton}
+          onPress={() => router.push('/(farmer)/gerenciar-produto')}
+        >
+          <Ionicons name="add" size={24} color="#FEFAE0" />
+          <Text style={styles.addButtonText}>Adicionar</Text>
+        </TouchableOpacity>
+      </View>
+      {renderContent()}
+    </SafeAreaView>
+  );
+}
+
+// --- Estilos (Atualizados) ---
 const styles = StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: '#F0F4F8' },
-    listContainer: { padding: 15 },
-    card: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 15, marginBottom: 15, elevation: 2, alignItems: 'center' },
-    productImage: { width: 70, height: 70, borderRadius: 8 },
-    productInfo: { flex: 1, marginLeft: 15, justifyContent: 'center' },
-    productName: { fontSize: 18, fontWeight: 'bold', color: '#1B5E20' },
-    productPrice: { fontSize: 16, color: '#555', marginVertical: 2 },
-    productStock: { fontSize: 14, color: 'gray' },
-    actions: { flexDirection: 'row' },
-    actionButton: { padding: 8 },
-    fab: { position: 'absolute', bottom: 30, right: 30, width: 60, height: 60, borderRadius: 30, backgroundColor: '#2E7D32', justifyContent: 'center', alignItems: 'center', elevation: 5 },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F8F7F2',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#283618',
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#606C38',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  addButtonText: {
+    color: '#FEFAE0',
+    fontWeight: 'bold',
+    marginLeft: 5,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    textAlign: 'center',
+    marginTop: 50,
+    fontSize: 16,
+    color: '#D90429',
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 50,
+    fontSize: 16,
+    color: '#888',
+  },
+  listContainer: {
+    padding: 15,
+  },
+  productCard: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 15,
+    elevation: 2,
+    alignItems: 'center',
+  },
+  productImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
+  productInfo: {
+    flex: 1,
+    marginLeft: 15,
+  },
+  productName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#283618',
+  },
+  productPrice: {
+    fontSize: 16,
+    color: '#606C38',
+    marginTop: 5,
+  },
+  productStatus: {
+    fontSize: 14,
+    color: '#888',
+    marginTop: 5,
+  },
+  // --- NOVOS ESTILOS PARA BOTÕES ---
+  actionButtons: {
+    flexDirection: 'column',
+    justifyContent: 'space-around',
+  },
+  iconButton: {
+    padding: 8,
+  },
 });

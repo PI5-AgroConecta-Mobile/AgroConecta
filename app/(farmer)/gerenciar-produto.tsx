@@ -1,106 +1,162 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
-import { useLocalSearchParams, router, Stack } from 'expo-router';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  SafeAreaView,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import api from '../../services/api'; 
+import axios from 'axios';
+import { ApiProduct } from '../../types/api.types'; 
 
 export default function GerenciarProdutoScreen() {
-    const params = useLocalSearchParams();
-    const isEditing = params.id ? true : false;
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  
+  let produtoParaEditar: ApiProduct | null = null;
+  if (typeof params.product === 'string') {
+    try {
+      produtoParaEditar = JSON.parse(params.product);
+    } catch (e) {
+      console.error("Falha ao ler dados do produto para edição", e);
+    }
+  }
 
-    // Estados para os campos do formulário
-    const [imagem, setImagem] = useState<string | null>(null);
-    const [nome, setNome] = useState('');
-    const [preco, setPreco] = useState('');
-    const [estoque, setEstoque] = useState('');
-    const [descricao, setDescricao] = useState('');
+  const isEditing = !!produtoParaEditar;
+  const [name, setName] = useState(produtoParaEditar?.name || '');
+  const [price, setPrice] = useState(produtoParaEditar?.price.toString() || '');
+  const [quantity, setQuantity] = useState(produtoParaEditar?.quantity.toString() || '');
+  const [type, setType] = useState(produtoParaEditar?.type.toString() || '1');
+  const [harvestType, setHarvestType] = useState(produtoParaEditar?.harvestType.toString() || '1');
+  const [unityType, setUnityType] = useState(produtoParaEditar?.unityType.toString() || '1');
+  const [imgUrl, setImgUrl] = useState(produtoParaEditar?.imgUrl || '');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const handleSubmit = async () => {
+    setError(null);
+    setLoading(true);
 
-    useEffect(() => {
-        // Se estiver editando, pré-carrega os dados (simulação)
-        if (isEditing) {
-            setNome(String(params.nome));
-            setPreco(String(params.preco));
-            setEstoque(String(params.estoque));
-        }
-    }, [params]);
+    if (!name || !price || !quantity) {
+      setError('Nome, Preço e Quantidade são obrigatórios.');
+      setLoading(false);
+      return;
+    }
 
-    const pickImage = async () => {
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 1,
+    const produtoData = {
+      name,
+      price: parseFloat(price),
+      quantity: parseInt(quantity),
+      type: parseInt(type),
+      harvestType: parseInt(harvestType),
+      unityType: parseInt(unityType),
+      imgUrl: imgUrl,
+      harvestDate: new Date().toISOString(), 
+    };
+
+    try {
+      if (isEditing) {
+        await api.put('/updateProduct', {
+          ...produtoData,
+          productId: produtoParaEditar?.id 
         });
-
-        if (!result.canceled) {
-            setImagem(result.assets[0].uri);
-        }
-    };
-
-    const handleSave = () => {
-        if (!nome || !preco || !estoque) {
-            Alert.alert("Campos Obrigatórios", "Por favor, preencha o nome, preço e estoque.");
-            return;
-        }
-        const produto = { id: params.id, imagem, nome, preco, estoque, descricao };
-        console.log("Salvando produto:", produto); 
         
-        Alert.alert(
-            `Produto ${isEditing ? 'Atualizado' : 'Criado'}!`,
-            `O produto "${nome}" foi salvo com sucesso.`,
-            [{ text: "OK", onPress: () => router.back() }]
-        );
-    };
+        Alert.alert('Sucesso!', 'Produto atualizado.', [
+          { text: 'OK', onPress: () => router.back() }
+        ]);
+
+      } else {
+        // --- MODO CRIAÇÃO ---
+        await api.post('/createProduct', produtoData);
+        
+        Alert.alert('Sucesso!', 'Produto criado.', [
+          { text: 'OK', onPress: () => router.back() }
+        ]);
+      }
+      
+      setLoading(false);
+
+    } catch (err) {
+      setLoading(false);
+      if (axios.isAxiosError(err) && err.response) {
+        setError(err.response.data.err || 'Erro ao salvar o produto.');
+        console.error('Erro API:', err.response.data);
+      } else {
+        setError('Não foi possível ligar ao servidor. Tente novamente.');
+        console.error(err);
+      }
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <Stack.Screen options={{ title: isEditing ? `Editar ${params.nome}` : 'Adicionar Novo Produto' }} />
       <ScrollView contentContainerStyle={styles.container}>
-        <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
-            {imagem ? (
-                <Image source={{ uri: imagem }} style={styles.productImage} />
-            ) : (
-                <View style={styles.imagePlaceholder}>
-                    <Ionicons name="camera-outline" size={40} color="#A9A9A9" />
-                    <Text style={styles.imagePlaceholderText}>Escolher Foto</Text>
-                </View>
-            )}
-        </TouchableOpacity>
-
-        <View style={styles.form}>
-            <Text style={styles.label}>Nome do Produto</Text>
-            <TextInput style={styles.input} placeholder="Ex: Tomate Orgânico" value={nome} onChangeText={setNome} />
-
-            <Text style={styles.label}>Preço</Text>
-            <TextInput style={styles.input} placeholder="Ex: R$ 10,99/kg" value={preco} onChangeText={setPreco} />
-
-            <Text style={styles.label}>Estoque Disponível</Text>
-            <TextInput style={styles.input} placeholder="Ex: 20 (em kg, un, dúzia, etc.)" value={estoque} onChangeText={setEstoque} keyboardType="numeric" />
-            
-            <Text style={styles.label}>Descrição</Text>
-            <TextInput style={[styles.input, styles.textArea]} placeholder="Descreva seu produto, tipo de colheita, etc." multiline value={descricao} onChangeText={setDescricao} />
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#283618" />
+          </TouchableOpacity>
+          {/* 7. Título dinâmico */}
+          <Text style={styles.title}>
+            {isEditing ? 'Editar Produto' : 'Adicionar Novo Produto'}
+          </Text>
         </View>
 
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>Salvar Produto</Text>
+  
+        <Text style={styles.label}>Nome do Produto</Text>
+        <TextInput style={styles.input} placeholder="Ex: Tomate Orgânico" value={name} onChangeText={setName} />
+        
+        <Text style={styles.label}>Preço</Text>
+        <TextInput style={styles.input} placeholder="Ex: 10.99" value={price} onChangeText={setPrice} keyboardType="numeric" />
+        
+        <Text style={styles.label}>Quantidade Disponível</Text>
+        <TextInput style={styles.input} placeholder="Ex: 50" value={quantity} onChangeText={setQuantity} keyboardType="numeric" />
+        
+        <Text style={styles.label}>Tipo de Unidade (1=Kg, 2=Un, 3=Dúzia)</Text>
+        <TextInput style={styles.input} value={unityType} onChangeText={setUnityType} keyboardType="numeric" />
+        
+        <Text style={styles.label}>Tipo de Produto (1=Fruta, 2=Verdura, ...)</Text>
+        <TextInput style={styles.input} value={type} onChangeText={setType} keyboardType="numeric" />
+        
+        <Text style={styles.label}>Tipo de Colheita (1=Orgânico, 2=Não)</Text>
+        <TextInput style={styles.input} value={harvestType} onChangeText={setHarvestType} keyboardType="numeric" />
+        
+        <Text style={styles.label}>URL da Imagem (Opcional)</Text>
+        <TextInput style={styles.input} placeholder="https://..." value={imgUrl} onChangeText={setImgUrl} autoCapitalize="none" />
+        
+        {error && <Text style={styles.errorText}>{error}</Text>}
+
+        <TouchableOpacity style={[styles.button, loading && styles.buttonDisabled]} onPress={handleSubmit} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator size="small" color="#FEFAE0" />
+          ) : (
+            <Text style={styles.buttonText}>
+              {/* 8. Texto do botão dinâmico */}
+              {isEditing ? 'Salvar Alterações' : 'Salvar Produto'}
+            </Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+// --- Estilos (sem alterações) ---
 const styles = StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: '#F0F4F8' },
-    container: { padding: 20 },
-    imagePicker: { width: '100%', height: 200, backgroundColor: '#E8F5E9', borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 30, borderWidth: 2, borderColor: '#A5D6A7', borderStyle: 'dashed' },
-    productImage: { width: '100%', height: '100%', borderRadius: 10 },
-    imagePlaceholder: { alignItems: 'center' },
-    imagePlaceholderText: { marginTop: 10, color: '#A9A9A9', fontSize: 16 },
-    form: {},
-    label: { fontSize: 16, fontWeight: '500', color: '#1B5E20', marginBottom: 8 },
-    input: { backgroundColor: '#FFFFFF', paddingHorizontal: 15, paddingVertical: 12, borderRadius: 8, fontSize: 16, borderWidth: 1, borderColor: '#DDD', marginBottom: 20 },
-    textArea: { height: 120, textAlignVertical: 'top' },
-    saveButton: { backgroundColor: '#2E7D32', padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 10 },
-    saveButtonText: { color: '#FFFFFF', fontSize: 18, fontWeight: 'bold' },
+  safeArea: { flex: 1, backgroundColor: '#F8F7F2' },
+  container: { flexGrow: 1, padding: 20 },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  backButton: { padding: 10, marginRight: 10 },
+  title: { fontSize: 22, fontWeight: 'bold', color: '#283618' },
+  label: { fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 8, marginTop: 10 },
+  input: { height: 50, backgroundColor: '#FFFFFF', borderRadius: 10, paddingHorizontal: 15, fontSize: 16, borderWidth: 1, borderColor: '#E0E0E0' },
+  button: { backgroundColor: '#283618', padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 30 },
+  buttonDisabled: { backgroundColor: '#A9A9A9' },
+  buttonText: { color: '#FEFAE0', fontSize: 16, fontWeight: 'bold' },
+  errorText: { color: '#D90429', textAlign: 'center', marginTop: 15, fontSize: 14, fontWeight: '600' },
 });

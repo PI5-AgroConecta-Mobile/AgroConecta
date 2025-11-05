@@ -42,6 +42,13 @@ export default function FarmerTabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="chat"
+        options={{
+          title: 'Chat',
+          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={28} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="perfil-fazenda"
         options={{
           title: 'Minha Fazenda',
