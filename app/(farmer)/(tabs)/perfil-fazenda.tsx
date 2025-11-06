@@ -1,16 +1,20 @@
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
+  Alert,
+  SafeAreaView,
   StyleSheet,
   Text,
-  View,
-  SafeAreaView,
   TouchableOpacity,
-  Alert,
+  View,
+  ScrollView
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 // 1. Importe o hook de autenticação (caminho também é 3 níveis acima)
+import { QuickActions } from '@/components/QuickActions';
 import { useAuth } from '../../../context/AuthContext';
+import { ProfileHeader } from '@/components/ProfileHeader';
+import { MenuItem } from '@/components/MenuItem';
 
 export default function PerfilFazendaScreen() {
   
@@ -35,24 +39,45 @@ export default function PerfilFazendaScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <ScrollView style={styles.container}>
         <Text style={styles.title}>Perfil da Fazenda</Text>
         
-        {user && (
+        {/*user && (
           <Text style={styles.userInfo}>
             Sessão iniciada como: {user.name}
           </Text>
-        )}
+        )*/}
+
+        <ProfileHeader/>
+
+        <QuickActions/>
+
+        <View style={styles.menuContainer}>
+          <MenuItem href="/editarPerfil" icon="person-outline" label="Editar Perfil" />
+          <MenuItem href="/configuracoes" icon="cog-outline" label="Configurações" />
+          <MenuItem href="/sobre" icon="help-circle-outline" label="Ajuda & Suporte" />
+        </View>
+
+
+        {/* Botão de Logout */}
+        <View style={styles.menuContainer}>
+              <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="log-out-outline" size={24} color={'#C70039'} />
+                    <Text style={[styles.menuItemText, { color: '#C70039' }]}>Sair</Text>
+                </View>
+            </TouchableOpacity>
+        </View>
 
         {/* (Aqui entraria o resto do seu perfil de fazenda) */}
 
         {/* 4. O Botão de Logout */}
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        {/*<TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={24} color="#D90429" />
           <Text style={styles.logoutButtonText}>Sair da Conta</Text>
-        </TouchableOpacity>
+        </TouchableOpacity>*/}
 
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -65,7 +90,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: 20,
+    
   },
   title: {
     fontSize: 26,
@@ -97,4 +122,24 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 10,
   },
+  menuContainer: {
+    marginTop: 20,
+    marginHorizontal: 15,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    overflow: 'hidden',
+},
+menuItem: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  padding: 15,
+  borderBottomWidth: 1,
+  borderBottomColor: '#F0F0F0',
+},
+menuItemText: {
+  fontSize: 16,
+  marginLeft: 15,
+  color: '#333',
+},
 });

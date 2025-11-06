@@ -1,21 +1,21 @@
-import React, { useState, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios'; // <-- Importar o Axios para tratar erros
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
-  SafeAreaView,
-  FlatList,
-  TouchableOpacity,
   ActivityIndicator,
+  Alert,
+  FlatList,
   Image,
   RefreshControl,
-  Alert, // <-- Importar o Alert
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import api from '../../../services/api';
 import { ApiProduct } from '../../../types/api.types';
-import axios from 'axios'; // <-- Importar o Axios para tratar erros
 
 // --- Interface para as props do Card ---
 interface ProductCardProps {
@@ -64,7 +64,7 @@ const ProductCard = ({ item, onDelete, onEdit }: ProductCardProps) => {
 
 // --- Ecrã Principal (ATUALIZADO) ---
 export default function MeusProdutosScreen() {
-  const router = useRouter();
+  const router = useRouter(); 
   
   const [produtos, setProdutos] = useState<ApiProduct[]>([]);
   const [loading, setLoading] = useState(true);
