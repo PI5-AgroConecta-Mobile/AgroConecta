@@ -1,9 +1,23 @@
-import { ActionButton } from '@/components/ActionButton';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LineChart } from "react-native-chart-kit";
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { QuickActions } from '@/components/QuickActions';
+import { useFocusEffect } from 'expo-router';
+import api from '../../../services/api';
+import { ApiProduct } from '../../../types/api.types';
+
+interface Agendamento {
+  id: string;
+  quantity: number;
+  totalPrice: number;
+  status: number; 
+  scheduledFor: string;
+  product: { name: string; imgUrl: string; };
+  client: { name: string; contact: string; };
+}
 
 // --- Componente StatCard  ---
 const StatCard = ({ icon, label, value, color }: { icon: any, label: string, value: string | number, color: string }) => (
@@ -39,6 +53,54 @@ export const ActionButton = ({ href, icon, label }: ActionButtonProps) => (
 
 // --- Tela Principal do Dashboard ---
 export default function DashboardScreen() {
+    const [produtos, setProdutos] = useState<ApiProduct[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+    const fetchMyProducts = useCallback(async (showLoading = true) => {
+    if (showLoading) {
+      setLoading(true);
+    }
+    setError(null);
+    try {
+      const response = await api.get('/myproducts');
+      setProdutos(response.data);
+    } catch (err: any) {
+      console.error(err);
+      if (err.response && err.response.status === 401) {
+        setError("Não foi possível verificar a sua sessão.");
+      } else {
+        setError("Não foi possível carregar os seus produtos.");
+      }
+    } finally {
+      if (showLoading) {
+        setLoading(false);
+      }
+    }
+    }, []);
+
+    const fetchAgendamentos = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    setError(null);
+    try {
+      const response = await api.get<Agendamento[]>('/myagendamentos/farmer');
+      setAgendamentos(response.data);
+    } catch (err: any) {
+      console.error(err);
+      setError("Não foi possível carregar os agendamentos recebidos.");
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  }, []);
+
+  // useFocusEffect (sem alterações)
+  useFocusEffect(
+    useCallback(() => {
+        fetchMyProducts();
+        fetchAgendamentos()
+
+    }, [fetchMyProducts])
+  );
     const dashboardData = {
         faturamentoMes: 'R$ 1.250,50', agendamentosPendentes: 3, totalProdutos: 18, totalEstoque: 152,
         produtosMaisVendidos: [ { id: '1', nome: 'Tomate Orgânico', vendidos: '35 kg' }, { id: '2', nome: 'Ovos Caipira', vendidos: '20 dúzias' }, ],
@@ -53,20 +115,14 @@ export default function DashboardScreen() {
             
             <View style={styles.statsContainer}>
                 <StatCard icon="cash" label="Faturamento (Mês)" value={dashboardData.faturamentoMes} color="#2E7D32" />
-                <StatCard icon="calendar" label="Agendamentos Pendentes" value={dashboardData.agendamentosPendentes} color="#D84315" />
+                <StatCard icon="calendar" label="Agendamentos Pendentes" value={agendamentos.filter(ag=>(ag.status==1)).length} color="#D84315" />
             </View>
              <View style={styles.statsContainer}>
-                <StatCard icon="basket" label="Produtos Ativos" value={dashboardData.totalProdutos} color="#0277BD" />
+                <StatCard icon="basket" label="Produtos Ativos" value={produtos.length} color="#0277BD" />
                 <StatCard icon="layers" label="Unidades em Estoque" value={dashboardData.totalEstoque} color="#6A1B9A" />
             </View>
 
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Ações Rápidas</Text>
-                <View style={styles.actionsContainer}>
-                    <ActionButton href="/(farmer)/gerenciar-produto" icon="add-circle-outline" label="Adicionar Produto" />
-                    <ActionButton href="/(farmer)/(tabs)/agendamentos" icon="eye-outline" label="Ver Agendamentos" />
-                </View>
-            </View>
+            <QuickActions/>
 
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Vendas nos Últimos Meses</Text>
