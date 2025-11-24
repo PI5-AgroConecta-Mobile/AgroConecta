@@ -18,7 +18,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../../context/AuthContext';
 
 export default function UnifiedLoginScreen() {
-  const [isFarmer, setIsFarmer] = useState(false); // false = Cliente, true = Agricultor
+  const [isFarmer, setIsFarmer] = useState(false); 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,9 +26,7 @@ export default function UnifiedLoginScreen() {
   const { signIn } = useAuth();
   const router = useRouter();
 
-  // Cores baseadas no tipo de usuário
-  const primaryColor = isFarmer ? '#1B5E20' : '#E76F51'; // Verde para Agricultor, Laranja para Cliente
-  const secondaryColor = isFarmer ? '#E8F5E9' : '#FFF3E0';
+  const primaryColor = isFarmer ? '#1B5E20' : '#E76F51'; 
 
   async function handleLogin() {
     if (!email || !password) {
@@ -38,24 +36,22 @@ export default function UnifiedLoginScreen() {
 
     setLoading(true);
     try {
-      // O signIn é genérico, o backend decide quem é o usuário pelo email
       const user = await signIn(email, password);
-      
-      // Verificação opcional de UX: Se o usuário logou com o tipo "errado" selecionado
       if (isFarmer && user.userType !== 1) {
-        Alert.alert('Aviso', 'Você entrou como Cliente, mas estava na aba Agricultor. Redirecionando para a área de Clientes...');
+        Alert.alert('Aviso', 'Você é um Cliente, redirecionando para a área correta...');
       } else if (!isFarmer && user.userType === 1) {
-        Alert.alert('Aviso', 'Você entrou como Agricultor, mas estava na aba Cliente. Redirecionando para a área de Agricultores...');
+        Alert.alert('Aviso', 'Você é um Agricultor, redirecionando para a área correta...');
       }
 
-      // O AuthContext ou o _layout.tsx raiz deve lidar com o redirecionamento baseado no userType
-      // Se precisar forçar aqui:
-      // if (user.userType === 1) router.replace('/(farmer)/(tabs)');
-      // else router.replace('/(app)/(tabs)');
+      if (user.userType === 1) {
+        router.replace('/(farmer)/(tabs)'); 
+      } else {
+        router.replace('/(app)/(tabs)');
+      }
 
     } catch (error: any) {
       console.log(error);
-      Alert.alert('Falha no Login', error.message || 'Verifique suas credenciais e tente novamente.');
+      Alert.alert('Falha no Login', error.message || 'Verifique suas credenciais.');
     } finally {
       setLoading(false);
     }
@@ -69,13 +65,9 @@ export default function UnifiedLoginScreen() {
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
-        {/* Logo Dinâmica */}
         <View style={styles.header}>
           <Image 
-            source={isFarmer 
-              ? require('../../assets/images/simbolo-agricultor.png') // Certifique-se que esta imagem existe
-              : require('../../assets/images/SimboloClienteEscuro.png')    // Certifique-se que esta imagem existe
-            } 
+            source={require('../../assets/images/logo-escura.png')} 
             style={styles.logo} 
             resizeMode="contain"
           />
@@ -87,7 +79,7 @@ export default function UnifiedLoginScreen() {
           </Text>
         </View>
 
-        {/* Toggle / Seletor Deslizante */}
+        {/* Toggle / Seletor */}
         <View style={styles.toggleContainer}>
           <TouchableOpacity 
             style={[styles.toggleButton, !isFarmer && styles.activeToggle, !isFarmer && { borderColor: primaryColor }]} 
@@ -106,7 +98,6 @@ export default function UnifiedLoginScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Formulário */}
         <View style={styles.form}>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>E-mail</Text>
@@ -157,7 +148,7 @@ export default function UnifiedLoginScreen() {
             <Link href="/cadastro" asChild>
               <TouchableOpacity>
                 <Text style={[styles.signupText, { color: primaryColor }]}>
-                  {isFarmer ? 'Cadastre sua Fazenda' : 'Cadastre-se Grátis'}
+                  Cadastre-se Grátis
                 </Text>
               </TouchableOpacity>
             </Link>
@@ -173,10 +164,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   scrollContent: { flexGrow: 1, justifyContent: 'center', padding: 20 },
   header: { alignItems: 'center', marginBottom: 30 },
-  logo: { width: 140, height: 100, marginBottom: 10 },
+  logo: { width: 180, height: 100, marginBottom: 10 },
   title: { fontSize: 28, fontWeight: 'bold' },
   subtitle: { fontSize: 16, color: '#666', marginTop: 5 },
-  
   toggleContainer: { 
     flexDirection: 'row', 
     backgroundColor: '#F5F5F5', 
@@ -203,7 +193,6 @@ const styles = StyleSheet.create({
     borderWidth: 1 
   },
   toggleText: { fontSize: 14, fontWeight: '500' },
-
   form: { width: '100%' },
   inputGroup: { marginBottom: 20 },
   label: { fontSize: 14, color: '#333', marginBottom: 8, fontWeight: '600' },
@@ -218,7 +207,6 @@ const styles = StyleSheet.create({
   },
   input: { flex: 1, fontSize: 16 },
   forgotPassword: { alignSelf: 'flex-end', marginTop: 8 },
-  
   loginButton: { 
     height: 56, 
     borderRadius: 12, 
@@ -228,7 +216,6 @@ const styles = StyleSheet.create({
     elevation: 3
   },
   loginButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 30, gap: 5 },
   footerText: { color: '#666' },
   signupText: { fontWeight: 'bold' }

@@ -1,7 +1,7 @@
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import React, { useEffect } from 'react';
-import { AuthProvider, useAuth } from '../context/AuthContext'; // <-- Importe useAuth
+import { AuthProvider, useAuth } from '../context/AuthContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -11,30 +11,33 @@ function RootLayoutNav() {
   const router = useRouter();
 
   useEffect(() => {
-    if (isLoading) return; 
+    if (isLoading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
+    const inFarmerGroup = segments[0] === '(farmer)';
+    const inAppGroup = segments[0] === '(app)';
 
-   if (!token && !inAuthGroup) {
-      router.replace('/(auth)' as any); 
-    } else if (token && user) {
+    if (!token && !inAuthGroup) {
+      router.replace('/(auth)');
+    } 
+    else if (token && user) {
       
-      const inAppGroup = segments[0] === '(app)';
-      const inFarmerGroup = segments[0] === '(farmer)';
-
       if (inAuthGroup) {
-        // Linha 32
-        router.replace(user.userType === 1 ? '/(farmer)' : '/(app)' as any); 
-      } else if (user.userType === 0 && inFarmerGroup) {
-        // Linha 35
-        router.replace('/(app)' as any); 
-      } else if (user.userType === 1 && inAppGroup) {
-        // Linha 38
-        router.replace('/(farmer)' as any); 
+        if (user.userType === 1) {
+          router.replace('/(farmer)/(tabs)'); 
+        } else {
+          router.replace('/(app)/(tabs)'); 
+        }
+      } 
+      else if (user.userType === 0 && inFarmerGroup) {
+        router.replace('/(app)/(tabs)');
+      } 
+      else if (user.userType === 1 && inAppGroup) {
+        router.replace('/(farmer)/(tabs)');
       }
     }
-  }, [token, user, segments, isLoading, router]);
- 
+  }, [token, user, segments, isLoading]); 
+
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(auth)" />
@@ -50,15 +53,14 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
-      setTimeout(() => {
-        SplashScreen.hideAsync();
-      }, 1000); 
+      SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
 
   if (!fontsLoaded && !fontError) {
     return null;
   }
+
   return (
     <AuthProvider>
       <RootLayoutNav />
