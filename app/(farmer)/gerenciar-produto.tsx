@@ -20,25 +20,51 @@ export default function GerenciarProdutoScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   
-  let produtoParaEditar: ApiProduct | null = null;
-  if (typeof params.product === 'string') {
-    try {
-      produtoParaEditar = JSON.parse(params.product);
-    } catch (e) {
-      console.error("Falha ao ler dados do produto para edição", e);
-    }
-  }
-
-  const isEditing = !!produtoParaEditar;
-  const [name, setName] = useState(produtoParaEditar?.name || '');
-  const [price, setPrice] = useState(produtoParaEditar?.price.toString() || '');
-  const [quantity, setQuantity] = useState(produtoParaEditar?.quantity.toString() || '');
-  const [type, setType] = useState(produtoParaEditar?.type.toString() || '1');
-  const [harvestType, setHarvestType] = useState(produtoParaEditar?.harvestType.toString() || '1');
-  const [unityType, setUnityType] = useState(produtoParaEditar?.unityType.toString() || '1');
-  const [imgUrl, setImgUrl] = useState(produtoParaEditar?.imgUrl || '');
+  const [name, setName] = useState('');
+  const [price, setPrice] = useState('');
+  const [quantity, setQuantity] = useState('');
+  const [type, setType] = useState('1');
+  const [harvestType, setHarvestType] = useState('1');
+  const [unityType, setUnityType] = useState('1');
+  const [imgUrl, setImgUrl] = useState('');
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentProductId, setCurrentProductId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (params.product && typeof params.product === 'string') {
+      try {
+        const productData = JSON.parse(params.product) as ApiProduct;
+        
+        setName(productData.name);
+        setPrice(productData.price.toString());
+        setQuantity(productData.quantity.toString());
+        setType(productData.type.toString());
+        setHarvestType(productData.harvestType.toString());
+        setUnityType(productData.unityType.toString());
+        setImgUrl(productData.imgUrl || '');
+        
+        setIsEditing(true);
+        setCurrentProductId(productData.id);
+      } catch (e) {
+        console.error("Erro ao analisar produto:", e);
+      }
+    } else {
+      setName('');
+      setPrice('');
+      setQuantity('');
+      setType('1');
+      setHarvestType('1');
+      setUnityType('1');
+      setImgUrl('');
+      
+      setIsEditing(false);
+      setCurrentProductId(null);
+    }
+  }, [params.product]); 
+
   const handleSubmit = async () => {
     setError(null);
     setLoading(true);
@@ -61,10 +87,11 @@ export default function GerenciarProdutoScreen() {
     };
 
     try {
-      if (isEditing) {
+      if (isEditing && currentProductId) {
+        // --- MODO EDIÇÃO ---
         await api.put('/updateProduct', {
           ...produtoData,
-          productId: produtoParaEditar?.id 
+          productId: currentProductId 
         });
         
         Alert.alert('Sucesso!', 'Produto atualizado.', [
@@ -101,13 +128,11 @@ export default function GerenciarProdutoScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#283618" />
           </TouchableOpacity>
-          {/* 7. Título dinâmico */}
           <Text style={styles.title}>
             {isEditing ? 'Editar Produto' : 'Adicionar Novo Produto'}
           </Text>
         </View>
 
-  
         <Text style={styles.label}>Nome do Produto</Text>
         <TextInput style={styles.input} placeholder="Ex: Tomate Orgânico" value={name} onChangeText={setName} />
         
@@ -136,7 +161,6 @@ export default function GerenciarProdutoScreen() {
             <ActivityIndicator size="small" color="#FEFAE0" />
           ) : (
             <Text style={styles.buttonText}>
-              {/* 8. Texto do botão dinâmico */}
               {isEditing ? 'Salvar Alterações' : 'Salvar Produto'}
             </Text>
           )}
@@ -146,7 +170,6 @@ export default function GerenciarProdutoScreen() {
   );
 }
 
-// --- Estilos (sem alterações) ---
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#F8F7F2' },
   container: { flexGrow: 1, padding: 20 },
