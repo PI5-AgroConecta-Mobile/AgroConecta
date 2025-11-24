@@ -8,18 +8,18 @@ import {
   TouchableOpacity,
   FlatList,
   TextInput,
-  ImageSourcePropType,
   Dimensions,
+  ActivityIndicator
 } from 'react-native';
-import { Link, Stack } from 'expo-router';
+import { Link, Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '../../../context/AuthContext';
+import api from '../../../services/api';
 
-// --- Tipos e Dados de Exemplo ---
-interface Slide { id: string; image: ImageSourcePropType; }
+// --- Tipos Adaptados para API ---
+interface Slide { id: string; image: any; }
 interface Categoria { id: string; nome: string; icon: any; }
-interface Produto { id: string; nome: string; preco: string; produtor: string; image: ImageSourcePropType; }
-interface Fazenda { id: string; nome: string; distancia: string; image: ImageSourcePropType; }
 
 const slides: Slide[] = [
     { id: '1', image: require('../../../assets/images/capa.png') },
@@ -27,55 +27,63 @@ const slides: Slide[] = [
     { id: '3', image: require('../../../assets/images/fazenda1.jpg') },
 ];
 const categorias: Categoria[] = [
-    { id: '1', nome: 'Frutas', icon: 'nutrition-outline' }, { id: '2', nome: 'Verduras', icon: 'leaf-outline' },
-    { id: '3', nome: 'Laticínios', icon: 'egg-outline' }, { id: '4', nome: 'Outros', icon: 'grid-outline' },
+    { id: '1', nome: 'Frutas', icon: 'nutrition-outline' },
+    { id: '2', nome: 'Verduras', icon: 'leaf-outline' },
+    { id: '3', nome: 'Laticínios', icon: 'egg-outline' },
+    { id: '4', nome: 'Outros', icon: 'grid-outline' },
 ];
-const produtos: Produto[] = [
-    { id: '1', nome: 'Tomate Orgânico', produtor: 'Horta da Clara', preco: 'R$ 10,99/kg', image: require('../../../assets/images/tomate.jpg') },
-    { id: '2', nome: 'Alface Crespa', produtor: 'Sítio Verde', preco: 'R$ 3,50/un', image: require('../../../assets/images/alface.jpg') },
-    { id: '5', nome: 'Ovos Caipira', produtor: 'Galinheiro do Zé', preco: 'R$ 15,00/dúzia', image: require('../../../assets/images/ovos.jpg') },
-    { id: '4', nome: 'Queijo Minas', produtor: 'Laticínios da Serra', preco: 'R$ 25,00/kg', image: require('../../../assets/images/queijominas.jpg') },
-];
-const fazendasDestaque: Fazenda[] = [
-    { id: '1', nome: 'Horta Dona Clara', distancia: '2.5km', image: require('../../../assets/images/hortaDonaClara.png') },
-    { id: '2', nome: 'Fazenda Mundo Verde', distancia: '5km', image: require('../../../assets/images/hortaMundoVerde.png') },
-    { id: '3', nome: 'Sítio do Sebastião', distancia: '8km', image: require('../../../assets/images/hortaSebastiao.png') },
-];
+
 const { width } = Dimensions.get('window');
 
-// --- Componentes de Card ---
-const ProductCard = ({ item }: { item: Produto }) => (
-  <Link href={`/detalhesProdutos?id=${item.id}`} asChild>
+// --- Componentes de Card Atualizados ---
+const ProductCard = ({ item }: { item: any }) => (
+  <Link href={`/fazenda/${item.id}` as any} asChild>
     <TouchableOpacity style={styles.productCard}>
-      <Image source={item.image} style={styles.productImage} />
-      <Text style={styles.productName} numberOfLines={1}>{item.nome}</Text>
-      <Text style={styles.producerName}>{item.produtor}</Text>
-      <Text style={styles.productPrice}>{item.preco}</Text>
+      <Image 
+        source={item.imgUrl ? { uri: item.imgUrl } : require('../../../assets/images/icon.png')} 
+        style={styles.productImage} 
+      />
+      <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
+      <Text style={styles.producerName}>{item.user?.name || 'Produtor'}</Text>
+      <Text style={styles.productPrice}>R$ {Number(item.price).toFixed(2)}</Text>
     </TouchableOpacity>
   </Link>
-);
-const FarmCard = ({ item }: { item: Fazenda }) => (
-  <TouchableOpacity style={styles.farmCard}>
-    <Image source={item.image} style={styles.farmImage} />
-    <View style={styles.farmInfo}><Text style={styles.farmName}>{item.nome}</Text><Text style={styles.farmDistance}>{item.distancia}</Text></View>
-  </TouchableOpacity>
 );
 
 // --- TELA PRINCIPAL ---
 export default function HomeScreen() {
+  const { user } = useAuth();
   const [slideIndex, setSlideIndex] = useState(0);
   const slideRef = useRef<FlatList>(null);
+  
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Efeito para o carrossel passar sozinho
   useEffect(() => {
+    // Carrossel
     const interval = setInterval(() => {
       setSlideIndex(prevIndex => {
         const nextIndex = prevIndex === slides.length - 1 ? 0 : prevIndex + 1;
         slideRef.current?.scrollToIndex({ index: nextIndex, animated: true });
         return nextIndex;
       });
-    }, 4000); // Muda a cada 4 segundos
+    }, 4000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    // Buscar produtos reais
+    async function loadData() {
+      try {
+        const response = await api.get('/products');
+        setProducts(response.data);
+      } catch (error) {
+        console.log("Erro ao buscar produtos", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
   }, []);
 
   return (
@@ -83,13 +91,16 @@ export default function HomeScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <ScrollView>
         <View style={styles.container}>
-            {/* 1. Cabeçalho Customizado */}
+            {/* 1. Cabeçalho Real */}
             <View style={styles.header}>
                 <View>
-                    <Text style={styles.greeting}>Olá, Samer!</Text>
+                    <Text style={styles.greeting}>Olá, {user?.name?.split(' ')[0] || 'Visitante'}!</Text>
                     <Text style={styles.location}>O que vamos colher hoje?</Text>
                 </View>
-                <Image source={require('../../../assets/images/Perfil-Cliente.jpeg')} style={styles.profilePic} />
+                <Image 
+                    source={user?.imgUrl ? { uri: user.imgUrl } : require('../../../assets/images/icon.png')} 
+                    style={styles.profilePic} 
+                />
             </View>
 
             {/* 2. Barra de Pesquisa */}
@@ -98,7 +109,7 @@ export default function HomeScreen() {
                 <TextInput placeholder="Procure por alimentos frescos..." style={styles.searchInput}/>
             </View>
             
-            {/* 3. Carrossel Automático */}
+            {/* 3. Carrossel */}
             <View style={styles.section}>
                 <FlatList
                     ref={slideRef} data={slides} keyExtractor={(item) => item.id} horizontal pagingEnabled showsHorizontalScrollIndicator={false}
@@ -126,12 +137,20 @@ export default function HomeScreen() {
                 />
             </View>
             
-            {/* 5. Produtos em Destaque */}
+            {/* 5. Produtos em Destaque (REAIS) */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Produtos Frescos Para Você</Text>
-                <View style={styles.productGrid}>
-                    {produtos.map(item => ( <ProductCard item={item} key={item.id} /> ))}
-                </View>
+                {loading ? (
+                    <ActivityIndicator color="#606C38" style={{ marginTop: 20 }} />
+                ) : (
+                    <View style={styles.productGrid}>
+                        {products.length > 0 ? (
+                            products.slice(0, 6).map((item: any) => ( <ProductCard item={item} key={item.id} /> ))
+                        ) : (
+                            <Text style={{ padding: 20, color: '#666' }}>Nenhum produto disponível no momento.</Text>
+                        )}
+                    </View>
+                )}
             </View>
 
             {/* 6. Chamada para Agricultores */}
@@ -144,16 +163,7 @@ export default function HomeScreen() {
                 </Link>
             </View>
 
-            {/* 7. Fazendas em Destaque */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Fazendas Próximas</Text>
-              <FlatList
-                data={fazendasDestaque} keyExtractor={(item) => item.id} horizontal showsHorizontalScrollIndicator={false}
-                renderItem={({ item }) => <FarmCard item={item} />} contentContainerStyle={{ paddingHorizontal: 15 }}
-              />
-            </View>
-
-            {/* 8. Pré-visualização do Mapa */}
+            {/* 7. Mapa Preview */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Explore no Mapa</Text>
               <Link href="/mapa" asChild>
@@ -169,12 +179,11 @@ export default function HomeScreen() {
   );
 }
 
-// --- ESTILOS REFINADOS ---
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#F8F7F2' },
   container: { paddingBottom: 40 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 20 },
-  profilePic: { width: 50, height: 50, borderRadius: 25 },
+  profilePic: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#ddd' },
   greeting: { fontSize: 24, fontWeight: 'bold', color: '#283618' },
   location: { fontSize: 16, color: '#606C38' },
   searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 15, margin: 20, paddingHorizontal: 15, height: 50, elevation: 3 },
@@ -187,9 +196,9 @@ const styles = StyleSheet.create({
   dotActive: { backgroundColor: '#606C38' },
   categoryChip: { backgroundColor: '#FFFFFF', paddingVertical: 10, paddingHorizontal: 15, borderRadius: 20, marginRight: 10, alignItems: 'center', flexDirection: 'row', elevation: 2 },
   categoryText: { marginLeft: 8, fontSize: 14, fontWeight: '600', color: '#606C38' },
-  productGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around', paddingHorizontal: 10 },
-  productCard: { backgroundColor: '#FFFFFF', borderRadius: 10, width: '45%', marginBottom: 20, padding: 10, elevation: 3, alignItems: 'center' },
-  productImage: { width: '100%', height: 120, borderRadius: 8 },
+  productGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingHorizontal: 20 },
+  productCard: { backgroundColor: '#FFFFFF', borderRadius: 10, width: '48%', marginBottom: 20, padding: 10, elevation: 3, alignItems: 'center' },
+  productImage: { width: '100%', height: 120, borderRadius: 8, backgroundColor: '#f0f0f0' },
   productName: { fontSize: 16, fontWeight: '600', marginTop: 8, color: '#283618', textAlign: 'center' },
   producerName: { fontSize: 12, color: '#888', marginTop: 2 },
   productPrice: { fontSize: 15, fontWeight: 'bold', color: '#606C38', marginTop: 6 },
@@ -198,11 +207,6 @@ const styles = StyleSheet.create({
   ctaText: { fontSize: 16, color: '#D4D8C8', textAlign: 'center', marginBottom: 20 },
   ctaButton: { backgroundColor: '#FEFAE0', paddingVertical: 12, paddingHorizontal: 30, borderRadius: 25 },
   ctaButtonText: { color: '#283618', fontSize: 16, fontWeight: 'bold' },
-  farmCard: { backgroundColor: '#FFFFFF', borderRadius: 10, width: 250, marginHorizontal: 10, elevation: 3, overflow: 'hidden', flexDirection: 'row', alignItems: 'center' },
-  farmImage: { width: 80, height: 80 },
-  farmInfo: { padding: 15, flex: 1 },
-  farmName: { fontSize: 18, fontWeight: 'bold', color: '#283618' },
-  farmDistance: { fontSize: 14, color: '#606C38', marginTop: 4 },
   mapPreview: { marginHorizontal: 20, height: 150, borderRadius: 15, overflow: 'hidden', elevation: 3 },
   mapImage: { width: '100%', height: '100%' },
   mapOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },

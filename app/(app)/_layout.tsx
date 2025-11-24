@@ -4,7 +4,7 @@ import { Image, TouchableOpacity, View, Text, StyleSheet } from 'react-native';
 import { useNavigation, router, useSegments } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
 
-// --- Componente do Cabeçalho (Não precisa mudar nada aqui) ---
+// --- Componente do Cabeçalho  ---
 function CustomHeaderTitle() {
   const segments = useSegments();
   const currentPage = segments[segments.length - 1];

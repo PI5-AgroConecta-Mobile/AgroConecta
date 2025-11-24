@@ -1,240 +1,194 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useState } from 'react';
-import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { LineChart } from "react-native-chart-kit";
+import { ScrollView, StyleSheet, Text, View, ActivityIndicator, Dimensions, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { PieChart } from 'react-native-chart-kit';
 import { QuickActions } from '@/components/QuickActions';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import api from '../../../services/api';
+import { useAuth } from '../../../context/AuthContext';
 import { ApiProduct } from '../../../types/api.types';
 
+// --- Interfaces ---
 interface Agendamento {
-  id: string;
-  quantity: number;
-  totalPrice: number;
-  status: number; 
-  scheduledFor: string;
-  product: { name: string; imgUrl: string; };
-  client: { name: string; contact: string; };
+    id: string;
+    quantity: number;
+    totalPrice: number;
+    status: number;
+    scheduledFor: string;
+    product: { name: string; imgUrl: string; };
+    client: { name: string; contact: string; };
 }
 
-// --- Componente StatCard  ---
+// --- Componentes Auxiliares ---
 const StatCard = ({ icon, label, value, color }: { icon: any, label: string, value: string | number, color: string }) => (
     <View style={styles.statCard}>
-        <Ionicons name={icon} size={28} color={color} style={styles.statIcon} />
+        <View style={[styles.iconContainer, { backgroundColor: `${color}20` }]}>
+            <Ionicons name={icon} size={24} color={color} />
+        </View>
         <View style={styles.statTextContainer}>
-            <Text style={styles.statLabel}>{label}</Text>
             <Text style={styles.statValue}>{value}</Text>
+            <Text style={styles.statLabel}>{label}</Text>
         </View>
     </View>
 );
 
-const ListItem = ({ title, subtitle, icon, iconColor }: { title: string, subtitle: string, icon: any, iconColor: string }) => (
-    <View style={styles.listItem}>
-        <Ionicons name={icon} size={24} color={iconColor} style={styles.listItemIcon} />
-        <View style={{ flex: 1 }}>
-            <Text style={styles.listItemTitle}>{title}</Text>
-            <Text style={styles.listItemSubtitle}>{subtitle}</Text>
-        </View>
-    </View>
-);
+const screenWidth = Dimensions.get("window").width;
 
-/*type ActionButtonProps = { href: any; icon: React.ComponentProps<typeof Ionicons>['name']; label: string; };
-export const ActionButton = ({ href, icon, label }: ActionButtonProps) => (
-    <Link href={href} asChild>
-        <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name={icon} size={28} color="#1B5E20" />
-            <Text style={styles.actionButtonText}>{label}</Text>
-        </TouchableOpacity>
-    </Link>
-);*/
-
-
-// --- Tela Principal do Dashboard ---
 export default function DashboardScreen() {
+    const { user } = useAuth();
     const [produtos, setProdutos] = useState<ApiProduct[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
-    const fetchMyProducts = useCallback(async (showLoading = true) => {
-    if (showLoading) {
-      setLoading(true);
-    }
-    setError(null);
-    try {
-      const response = await api.get('/myproducts');
-      setProdutos(response.data);
-    } catch (err: any) {
-      console.error(err);
-      if (err.response && err.response.status === 401) {
-        setError("Não foi possível verificar a sua sessão.");
-      } else {
-        setError("Não foi possível carregar os seus produtos.");
-      }
-    } finally {
-      if (showLoading) {
-        setLoading(false);
-      }
-    }
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const fetchData = useCallback(async () => {
+        try {
+            const [prodRes, agendRes] = await Promise.all([
+                api.get('/myproducts'),
+                api.get<Agendamento[]>('/myagendamentos/farmer')
+            ]);
+            setProdutos(prodRes.data);
+            setAgendamentos(agendRes.data);
+        } catch (err) {
+            console.error("Erro dashboard", err);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
     }, []);
 
-    const fetchAgendamentos = useCallback(async (showLoading = true) => {
-    if (showLoading) setLoading(true);
-    setError(null);
-    try {
-      const response = await api.get<Agendamento[]>('/myagendamentos/farmer');
-      setAgendamentos(response.data);
-    } catch (err: any) {
-      console.error(err);
-      setError("Não foi possível carregar os agendamentos recebidos.");
-    } finally {
-      if (showLoading) setLoading(false);
-    }
-  }, []);
+    useFocusEffect(useCallback(() => { fetchData(); }, [fetchData]));
 
-  // useFocusEffect (sem alterações)
-  useFocusEffect(
-    useCallback(() => {
-        fetchMyProducts();
-        fetchAgendamentos()
-
-    }, [fetchMyProducts])
-  );
-    const dashboardData = {
-        faturamentoMes: 'R$ 1.250,50', agendamentosPendentes: 3, totalProdutos: 18, totalEstoque: 152,
-        produtosMaisVendidos: [ { id: '1', nome: 'Tomate Orgânico', vendidos: '35 kg' }, { id: '2', nome: 'Ovos Caipira', vendidos: '20 dúzias' }, ],
-        dadosGrafico: { labels: ["Maio", "Junho", "Julho", "Agosto", "Setembro"], datasets: [{ data: [ 850, 980, 1100, 1050, 1250 ] }] }
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchData();
     };
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.container}>
-            <Text style={styles.pageTitle}>Meu Painel</Text>
-            <Text style={styles.pageSubtitle}>Bem-vindo, Fazenda Horta da Clara!</Text>
-            
-            <View style={styles.statsContainer}>
-                <StatCard icon="cash" label="Faturamento (Mês)" value={dashboardData.faturamentoMes} color="#2E7D32" />
-                <StatCard icon="calendar" label="Agendamentos Pendentes" value={agendamentos.filter(ag=>(ag.status==1)).length} color="#D84315" />
-            </View>
-             <View style={styles.statsContainer}>
-                <StatCard icon="basket" label="Produtos Ativos" value={produtos.length} color="#0277BD" />
-                <StatCard icon="layers" label="Unidades em Estoque" value={dashboardData.totalEstoque} color="#6A1B9A" />
-            </View>
+    const pendentes = agendamentos.filter(a => a.status === 0).length;
+    const confirmados = agendamentos.filter(a => a.status === 1).length;
+    const totalFaturamento = agendamentos
+        .filter(a => a.status === 1)
+        .reduce((acc, curr) => acc + Number(curr.totalPrice), 0);
 
-            <QuickActions/>
+    const pieData = [
+        { name: 'Pendentes', population: pendentes, color: '#FFB74D', legendFontColor: '#7F7F7F', legendFontSize: 12 },
+        { name: 'Confirmados', population: confirmados, color: '#66BB6A', legendFontColor: '#7F7F7F', legendFontSize: 12 },
+        { name: 'Cancelados', population: agendamentos.filter(a => a.status === 2).length, color: '#EF5350', legendFontColor: '#7F7F7F', legendFontSize: 12 },
+    ].filter(item => item.population > 0);
 
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Vendas nos Últimos Meses</Text>
-                <LineChart
-                    data={dashboardData.dadosGrafico}
-                    width={Dimensions.get("window").width - 70}
-                    height={220}
-                    yAxisLabel="R$ "
-                    chartConfig={{
-                        backgroundColor: "#FFFFFF", backgroundGradientFrom: "#FFFFFF", backgroundGradientTo: "#FFFFFF",
-                        decimalPlaces: 0, color: (opacity = 1) => `rgba(46, 125, 50, ${opacity})`,
-                        labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                        style: { borderRadius: 16 }, propsForDots: { r: "4", strokeWidth: "2", stroke: "#2E7D32" }
-                    }}
-                    bezier style={{ marginVertical: 8, borderRadius: 16 }}
-                />
-            </View>
+    return (
+        <SafeAreaView style={styles.safeArea}>
+            <Stack.Screen options={{ headerShown: false }} />
+            <StatusBar style="dark" backgroundColor="#F2F5F8" />
 
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Produtos Mais Vendidos</Text>
-                {dashboardData.produtosMaisVendidos.map(item => (
-                    <ListItem key={item.id} icon="ribbon-outline" iconColor="#1565C0" title={item.nome} subtitle={`Vendidos este mês: ${item.vendidos}`} />
-                ))}
-            </View>
-        </ScrollView>
-    </SafeAreaView>
-  );
+            <ScrollView 
+                style={styles.scrollView}
+                contentContainerStyle={styles.container}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2E7D32']} />}
+            >
+                <View style={styles.headerSimple}>
+                    <Text style={styles.pageTitle}>Painel de Controle</Text>
+                    <Text style={styles.pageSubtitle}>Visão geral da fazenda</Text>
+                </View>
+
+                {loading ? (
+                    <ActivityIndicator size="large" color="#2E7D32" style={{ marginTop: 50 }} />
+                ) : (
+                    <>
+                        {/* Cards de Estatísticas */}
+                        <View style={styles.gridContainer}>
+                            <StatCard icon="wallet-outline" label="Faturamento" value={`R$ ${totalFaturamento.toFixed(2)}`} color="#2E7D32" />
+                            <StatCard icon="cube-outline" label="Produtos" value={produtos.length} color="#1976D2" />
+                        </View>
+                        <View style={styles.gridContainer}>
+                            <StatCard icon="time-outline" label="Pendentes" value={pendentes} color="#F57C00" />
+                            <StatCard icon="checkmark-done-outline" label="Entregues" value={confirmados} color="#388E3C" />
+                        </View>
+
+                        {/* Ações Rápidas */}
+                        <View style={styles.sectionContainer}>
+                            <Text style={styles.sectionTitle}>Acesso Rápido</Text>
+                            <QuickActions />
+                        </View>
+
+                        {/* Gráfico de Pizza - Com espaçamento corrigido */}
+                        {pieData.length > 0 && (
+                            <View style={styles.chartSection}>
+                                <View style={styles.chartCard}>
+                                    <Text style={styles.chartTitle}>Status dos Pedidos</Text>
+                                    <PieChart
+                                        data={pieData}
+                                        width={screenWidth - 60}
+                                        height={200}
+                                        chartConfig={{
+                                            color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                                            decimalPlaces: 0,
+                                        }}
+                                        accessor={"population"}
+                                        backgroundColor={"transparent"}
+                                        paddingLeft={"15"}
+                                        center={[10, 0]}
+                                        absolute
+                                    />
+                                </View>
+                            </View>
+                        )}
+
+                        {/* Últimos Pedidos */}
+                        <View style={styles.lastOrdersContainer}>
+                            <Text style={styles.sectionTitle}>Últimos Pedidos</Text>
+                            {agendamentos.length === 0 ? (
+                                <Text style={styles.emptyText}>Nenhum pedido recebido ainda.</Text>
+                            ) : (
+                                agendamentos.slice(0, 5).map((ag) => (
+                                    <View key={ag.id} style={styles.orderRow}>
+                                        <View style={[styles.statusDot, { backgroundColor: ag.status === 1 ? '#4CAF50' : ag.status === 0 ? '#FFC107' : '#F44336' }]} />
+                                        <View style={{ flex: 1, marginLeft: 10 }}>
+                                            <Text style={styles.orderProduct}>{ag.product?.name || 'Produto Removido'}</Text>
+                                            <Text style={styles.orderClient}>{ag.client?.name} • {new Date(ag.scheduledFor).toLocaleDateString('pt-BR')}</Text>
+                                        </View>
+                                        <Text style={styles.orderPrice}>R$ {Number(ag.totalPrice).toFixed(2)}</Text>
+                                    </View>
+                                ))
+                            )}
+                        </View>
+                    </>
+                )}
+            </ScrollView>
+        </SafeAreaView>
+    );
 }
 
-// --- Estilos ---
 const styles = StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: '#F0F4F8' },
-    container: { padding: 20 },
-    pageTitle: { fontSize: 28, fontWeight: 'bold', color: '#1B5E20' },
-    pageSubtitle: { fontSize: 16, color: 'gray', marginBottom: 25 },
-    statsContainer: { flexDirection: 'row', justifyContent: 'space-between', gap: 15, marginBottom: 15 },
-    statCard: {
-        flex: 1,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        padding: 15,
-        flexDirection: 'row',
-        alignItems: 'center',
-        elevation: 2,
-        shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 5,
-    },
-    statIcon: {
-        marginRight: 10,
-    },
-    statTextContainer: {
-        flex: 1, 
-    },
-    statValue: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#111',
-    },
-    statLabel: {
-        fontSize: 12,
-        color: '#666',
-        flexShrink: 1,
-    },
-    section: {
-        marginTop: 25,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        padding: 15,
-        elevation: 2,
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#1B5E20',
-        marginBottom: 15,
-    },
-    actionsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        gap: 10,
-    },
-    actionButton: {
-        flex: 1,
-        backgroundColor: '#E8F5E9',
-        paddingVertical: 15,
-        borderRadius: 10,
-        alignItems: 'center',
-    },
-    actionButtonText: {
-        marginTop: 8,
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#1B5E20',
-        textAlign: 'center',
-    },
-    listItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F0F0F0',
-    },
-    listItemIcon: {
-        marginRight: 15,
-    },
-    listItemTitle: {
-        fontSize: 16,
-        color: '#333',
-    },
-    listItemSubtitle: {
-        fontSize: 14,
-        color: 'gray',
-        fontStyle: 'italic',
-        marginTop: 2,
-    },
+    safeArea: { flex: 1, backgroundColor: '#F2F5F8' },
+    scrollView: { flex: 1 },
+    container: { padding: 20, paddingBottom: 40 },
+    
+    headerSimple: { marginBottom: 20 },
+    pageTitle: { fontSize: 26, fontWeight: 'bold', color: '#1B5E20' },
+    pageSubtitle: { fontSize: 14, color: '#666' },
+
+    gridContainer: { flexDirection: 'row', gap: 15, marginBottom: 15 },
+    statCard: { flex: 1, backgroundColor: '#FFF', borderRadius: 12, padding: 15, flexDirection: 'row', alignItems: 'center', elevation: 2 },
+    iconContainer: { padding: 10, borderRadius: 8, marginRight: 12 },
+    statTextContainer: { flex: 1 },
+    statValue: { fontSize: 18, fontWeight: 'bold', color: '#333' },
+    statLabel: { fontSize: 12, color: '#666' },
+
+    sectionContainer: { marginBottom: 25 }, 
+    sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1B5E20', marginBottom: 12 },
+
+    chartSection: { marginBottom: 25, alignItems: 'center' },
+    chartCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 15, width: '100%', elevation: 2, alignItems: 'center' },
+    chartTitle: { fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 10, alignSelf: 'flex-start' },
+
+    lastOrdersContainer: { backgroundColor: '#FFF', borderRadius: 16, padding: 15, elevation: 2 },
+    orderRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F1F1F1' },
+    statusDot: { width: 10, height: 10, borderRadius: 5 },
+    orderProduct: { fontSize: 15, fontWeight: '600', color: '#333' },
+    orderClient: { fontSize: 12, color: '#888' },
+    orderPrice: { fontSize: 15, fontWeight: 'bold', color: '#2E7D32' },
+    emptyText: { color: '#999', fontStyle: 'italic', textAlign: 'center', padding: 20 }
 });

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import axios from 'axios'; // <-- Importar o Axios para tratar erros
+import axios from 'axios'; 
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
@@ -20,11 +20,11 @@ import { ApiProduct } from '../../../types/api.types';
 // --- Interface para as props do Card ---
 interface ProductCardProps {
   item: ApiProduct;
-  onDelete: (productId: string) => void; // Função para apagar
-  onEdit: (product: ApiProduct) => void; // Função para editar
+  onDelete: (productId: string) => void; 
+  onEdit: (product: ApiProduct) => void; 
 }
 
-// --- Componente de Card (ATUALIZADO) ---
+// --- Componente de Card ---
 const ProductCard = ({ item, onDelete, onEdit }: ProductCardProps) => {
   
   const formatPrice = (price: number) => {
@@ -48,7 +48,6 @@ const ProductCard = ({ item, onDelete, onEdit }: ProductCardProps) => {
         </Text>
       </View>
       
-      {/* --- NOVOS BOTÕES DE AÇÃO --- */}
       <View style={styles.actionButtons}>
         <TouchableOpacity style={styles.iconButton} onPress={() => onEdit(item)}>
           <Ionicons name="pencil" size={22} color="#606C38" />
@@ -62,7 +61,6 @@ const ProductCard = ({ item, onDelete, onEdit }: ProductCardProps) => {
   );
 };
 
-// --- Ecrã Principal (ATUALIZADO) ---
 export default function MeusProdutosScreen() {
   const router = useRouter(); 
   
@@ -70,7 +68,6 @@ export default function MeusProdutosScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Função para carregar os produtos
   const fetchMyProducts = useCallback(async (showLoading = true) => {
     if (showLoading) {
       setLoading(true);
@@ -93,14 +90,12 @@ export default function MeusProdutosScreen() {
     }
   }, []);
 
-  // useFocusEffect (sem alterações)
   useFocusEffect(
     useCallback(() => {
       fetchMyProducts();
     }, [fetchMyProducts])
   );
 
-  // --- NOVA FUNÇÃO DE APAGAR ---
   const handleDelete = (productId: string) => {
     Alert.alert(
       "Apagar Produto",
@@ -112,16 +107,9 @@ export default function MeusProdutosScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              // 1. Chamar a API de delete
               await api.delete(`/deleteProduct/${productId}`);
-              
-              // 2. Atualizar a lista (sem mostrar o "loading" grande)
-              // Opção A: Recarregar da API
               await fetchMyProducts(false);
-              
-              // Opção B: Remover localmente (mais rápido)
-              // setProdutos(prev => prev.filter(p => p.id !== productId));
-              
+            
             } catch (err) {
               if (axios.isAxiosError(err) && err.response) {
                 Alert.alert("Erro", err.response.data.err || "Não foi possível apagar o produto.");
@@ -136,17 +124,14 @@ export default function MeusProdutosScreen() {
   };
   
   const handleEdit = (product: ApiProduct) => {
-    // 1. Navegar para o ecrã de gerenciar-produto
-    // 2. Passar o objeto 'product' inteiro como um parâmetro (convertido para string JSON)
     router.push({
       pathname: '/(farmer)/gerenciar-produto',
       params: { 
-        product: JSON.stringify(product) // <-- Passa os dados
+        product: JSON.stringify(product) 
       }
     });
   };
 
-  // Renderização (Atualizada para passar as funções ao card)
   const renderContent = () => {
     if (loading) {
       return <ActivityIndicator size="large" color="#283618" style={styles.centered} />;
@@ -167,8 +152,8 @@ export default function MeusProdutosScreen() {
         renderItem={({ item }) => (
           <ProductCard 
             item={item} 
-            onDelete={handleDelete} // <-- Passa a função
-            onEdit={handleEdit}     // <-- Passa a função
+            onDelete={handleDelete} 
+            onEdit={handleEdit}     
           />
         )}
         contentContainerStyle={styles.listContainer}
@@ -196,7 +181,7 @@ export default function MeusProdutosScreen() {
   );
 }
 
-// --- Estilos (Atualizados) ---
+// --- Estilos  ---
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -281,7 +266,7 @@ const styles = StyleSheet.create({
     color: '#888',
     marginTop: 5,
   },
-  // --- NOVOS ESTILOS PARA BOTÕES ---
+  
   actionButtons: {
     flexDirection: 'column',
     justifyContent: 'space-around',
