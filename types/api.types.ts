@@ -11,10 +11,13 @@ export interface ApiProduct {
   productState: boolean;
   harvest: string;
   unityType: number;
+  farmName?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  distance?: number; 
 }
 
 export interface ApiUser {
   id: string;
   name: string;
-  // ... outros campos do seu model user
 }

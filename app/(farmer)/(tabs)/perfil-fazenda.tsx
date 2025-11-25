@@ -14,6 +14,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MenuItem } from '@/components/MenuItem';
 import { useAuth } from '../../../context/AuthContext';
 
+const BASE_URL = 'http://192.168.1.102:3333'; 
+
 export default function FarmerProfileScreen() {
   const { user, signOut } = useAuth();
 
@@ -33,7 +35,7 @@ export default function FarmerProfileScreen() {
         {/* Cabeçalho do Perfil */}
         <View style={styles.profileHeader}>
           <Image
-            source={user?.imgUrl ? { uri: user.imgUrl } : require('../../../assets/images/icon.png')}
+            source={user?.imgUrl ? { uri: `${BASE_URL}/uploads/${user.imgUrl}` } : require('../../../assets/images/icon.png')}
             style={styles.profileImage}
           />
           <Text style={styles.profileName}>{user?.name || 'Agricultor'}</Text>
@@ -51,6 +53,18 @@ export default function FarmerProfileScreen() {
 
         <View style={styles.menuContainer}>
           <MenuItem href="/configuracoes" icon="settings-outline" label="Configurações da Fazenda" />
+          
+          <MenuItem 
+            href="/(farmer)/editar-perfil" 
+            icon="person-outline" 
+            label="Editar Dados Pessoais" 
+          />
+          <MenuItem 
+            href="/(farmer)/dados-fazenda" 
+            icon="map-outline" 
+            label="Dados da Fazenda & Localização" 
+          />
+          
           <MenuItem href="/sobre" icon="help-circle-outline" label="Ajuda & Suporte" />
         </View>
 
@@ -79,7 +93,6 @@ const styles = StyleSheet.create({
     profileEmail: { fontSize: 14, color: '#606C38', marginTop: 4 },
     tagContainer: { marginTop: 10, backgroundColor: '#E9C46A', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
     tagText: { fontSize: 12, fontWeight: 'bold', color: '#fff' },
-    
     menuContainer: { marginTop: 20, marginHorizontal: 15, backgroundColor: '#fff', borderRadius: 12, overflow: 'hidden', elevation: 2 },
     menuItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 15, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
     menuItemText: { fontSize: 16, marginLeft: 15, color: '#333' },

@@ -13,9 +13,7 @@ import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// --- Componentes Reutilizáveis para a Tela ---
 
-// Título de cada seção
 const SectionTitle = ({ title }: { title: string }) => (
     <Text style={styles.sectionTitle}>{title}</Text>
 );

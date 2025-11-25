@@ -9,37 +9,36 @@ import api from '../../../services/api';
 export default function MapaScreen() {
     const [localizacao, setLocalizacao] = useState<Location.LocationObject | null>(null);
     const [erroMsg, setErroMsg] = useState<string | null>(null);
-    const [markers, setMarkers] = useState([]);
+    const [fazendas, setFazendas] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         (async () => {
-            // 1. Permissão e Localização
             let { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
-                setErroMsg('Permissão para aceder à localização foi negada');
+                setErroMsg('Permissão de localização negada');
                 setLoading(false);
                 return;
             }
             let location = await Location.getCurrentPositionAsync({});
             setLocalizacao(location);
 
-            // 2. Buscar dados da API
-            try {
-                const response = await api.get('/products');
-                // Filtra itens que têm coordenadas válidas (assumindo que o produto ou user tem lat/long)
-                // Se o backend não retornar lat/long no produto, precisará ajustar para buscar do user
-                const validMarkers = response.data.filter((item: any) => 
-                    item.latitude && item.longitude
-                );
-                setMarkers(validMarkers);
-            } catch (error) {
-                console.log("Erro ao buscar mapa", error);
-            } finally {
-                setLoading(false);
-            }
+            buscarFazendas(location.coords.latitude, location.coords.longitude);
         })();
     }, []);
+
+    const buscarFazendas = async (lat: number, long: number) => {
+        try {
+            const response = await api.get('/farms', {
+                params: { lat, long }
+            });
+            setFazendas(response.data);
+        } catch (error) {
+            console.log("Erro ao buscar fazendas", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     if (erroMsg) return <View style={styles.container}><Text>{erroMsg}</Text></View>;
     if (loading || !localizacao) return <View style={styles.container}><ActivityIndicator size="large" color="#283618" /></View>;
@@ -58,41 +57,45 @@ export default function MapaScreen() {
                     }}
                     showsUserLocation={true}
                 >
-                    {markers.map((item: any) => (
+                    {fazendas.map((item: any) => (
                         <Marker 
                             key={item.id} 
-                            coordinate={{ latitude: parseFloat(item.latitude), longitude: parseFloat(item.longitude) }}
+                            coordinate={{ latitude: item.latitude, longitude: item.longitude }}
                         >
                             <Callout>
                                 <View style={styles.calloutView}>
-                                    <Text style={styles.calloutTitle}>{item.name}</Text>
-                                    <Text style={styles.calloutText}>R$ {item.price}</Text>
+                                    <Text style={styles.calloutTitle}>{item.farmName || item.name}</Text>
+                                    <Text style={styles.calloutText}>
+                                        {item.distance ? `${item.distance.toFixed(1)} km` : ''}
+                                    </Text>
                                 </View>
                             </Callout>
                         </Marker>
                     ))}
                 </MapView>
 
-                {/* Lista Horizontal Inferior (Dados Reais) */}
                 <View style={styles.listaContainer}>
-                    <Text style={styles.listaTitle}>Ofertas Próximas</Text>
-                    {markers.length === 0 ? (
-                        <Text style={{marginLeft: 15, color: '#666'}}>Nenhum produto com localização encontrado.</Text>
+                    <Text style={styles.listaTitle}>Fazendas Próximas</Text>
+                    {fazendas.length === 0 ? (
+                        <Text style={{marginLeft: 15, color: '#666'}}>Nenhuma fazenda encontrada.</Text>
                     ) : (
                         <FlatList
-                            data={markers}
+                            data={fazendas}
                             horizontal
                             showsHorizontalScrollIndicator={false}
                             keyExtractor={(item:any) => item.id}
                             renderItem={({ item }: {item:any}) => (
+                                 // Ajuste o link conforme sua estrutura de navegação
                                  <Link href={`/fazenda/${item.id}` as any} asChild>
                                     <TouchableOpacity style={styles.cardFazenda}>
                                         <Image 
                                             source={item.imgUrl ? { uri: item.imgUrl } : require('../../../assets/images/icon.png')} 
                                             style={styles.cardImage} 
                                         />
-                                        <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
-                                        <Text style={styles.cardDistance}>R$ {item.price}</Text>
+                                        <Text style={styles.cardTitle} numberOfLines={1}>{item.farmName || item.name}</Text>
+                                        <Text style={styles.cardDistance}>
+                                            {item.distance ? `${item.distance.toFixed(1)} km` : ''}
+                                        </Text>
                                     </TouchableOpacity>
                                 </Link>
                             )}

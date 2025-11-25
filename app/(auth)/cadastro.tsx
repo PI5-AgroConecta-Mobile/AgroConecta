@@ -71,9 +71,10 @@ export default function CadastroScreen() {
         [
           {
             text: 'OK',
-            onPress: () => router.push(
-              tipoUsuario === 'cliente' ? '/(auth)/loginCliente' : '/(auth)/loginAgricultor'
-            ),
+            onPress: () => {
+              const path = tipoUsuario === 'cliente' ? '/(auth)/loginCliente' : '/(auth)/loginAgricultor';
+              router.push(path as any);
+            },
           },
         ]
       );

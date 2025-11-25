@@ -8,13 +8,20 @@ interface User {
   email: string;
   userType: number; // 0 = Cliente, 1 = Agricultor
   contact?: string | null;
-  contactType?: string | null;
+  contactType?: number | null; 
   imgUrl?: string | null;
   createDate?: string | null; 
+  
+  // Novos campos do mapa
+  farmName?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
+
 interface AuthContextData {
   signIn: (email: string, password: string) => Promise<User>; 
   signOut: () => void;
+  updateAuthState: (userData: Partial<User>) => Promise<void>; 
   user: User | null;
   token: string | null;
   isLoading: boolean;
@@ -30,13 +37,12 @@ export function useAuth() {
 const TOKEN_KEY = 'user_token';
 const USER_KEY = 'user_data';
 
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
- useEffect(() => {
+  useEffect(() => {
     async function loadDataFromStorage() {
       try {
         const storedToken = await SecureStore.getItemAsync(TOKEN_KEY);
@@ -56,20 +62,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     loadDataFromStorage();
   }, []);
-  // Função de Login 
-  const signIn = async (email: string, password: string): Promise<User> => { // <-- MUDANÇA
+
+  const signIn = async (email: string, password: string): Promise<User> => { 
     try {
       const response = await api.post('/login', { email, password });
       const { token, user } = response.data;
 
-      // Salva estado
       setToken(token);
       setUser(user);
 
-      // Salva headers
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-      // Salva no storage
       await SecureStore.setItemAsync(TOKEN_KEY, token);
       await SecureStore.setItemAsync(USER_KEY, JSON.stringify(user));
 
@@ -81,7 +84,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Função de Logout 
   const signOut = async () => {
     try {
       setUser(null);
@@ -95,11 +97,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateAuthState = async (userData: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...userData };
+      setUser(updatedUser);
+      await SecureStore.setItemAsync(USER_KEY, JSON.stringify(updatedUser));
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
         signIn,
         signOut,
+        updateAuthState, 
         user,
         token,
         isLoading,

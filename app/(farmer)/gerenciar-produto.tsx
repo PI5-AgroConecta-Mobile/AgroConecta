@@ -99,7 +99,6 @@ export default function GerenciarProdutoScreen() {
         ]);
 
       } else {
-        // --- MODO CRIAÇÃO ---
         await api.post('/createProduct', produtoData);
         
         Alert.alert('Sucesso!', 'Produto criado.', [

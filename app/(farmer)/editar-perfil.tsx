@@ -1,22 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-  ActivityIndicator
+  StyleSheet, Text, View, ScrollView, Image, TouchableOpacity, TextInput, Alert, ActivityIndicator
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import { useAuth } from '../../../context/AuthContext';
-import api from '../../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api';
 
+// Ajuste para o seu IP
 const BASE_URL = 'http://192.168.1.102:3333'; 
 
 type FormRowProps = {
@@ -45,7 +38,7 @@ const FormRow: React.FC<FormRowProps> = ({ icon, label, value, placeholder, secu
     </View>
 );
 
-export default function EditarPerfilScreen() {
+export default function EditarPerfilFarmerScreen() {
     const { user, updateAuthState } = useAuth();
     const [loading, setLoading] = useState(false);
     
@@ -68,8 +61,8 @@ export default function EditarPerfilScreen() {
             return;
         }
 
-       let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images, 
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
             aspect: [1, 1],
             quality: 0.7,
@@ -139,20 +132,19 @@ export default function EditarPerfilScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <Stack.Screen options={{ title: 'Editar Perfil', headerShown: false }} />
+      <Stack.Screen options={{ headerShown: false }} />
       
       <View style={styles.headerBar}>
           <TouchableOpacity onPress={() => router.back()} style={{ padding: 10 }}>
              <Ionicons name="arrow-back" size={24} color="#283618" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Editar Perfil</Text>
+          <Text style={styles.headerTitle}>Editar Perfil (Agricultor)</Text>
           <View style={{ width: 44 }} />
       </View>
 
       <ScrollView>
         <View style={styles.container}>
             <View style={styles.profilePicContainer}>
-                {/* LOGICA SEM IMAGEM PADRÃO */}
                 {user?.imgUrl ? (
                     <Image
                         source={{ uri: `${BASE_URL}/uploads/${user.imgUrl}` }}
@@ -174,10 +166,10 @@ export default function EditarPerfilScreen() {
             </View>
 
             <View style={styles.form}>
-                <FormRow icon="person-outline" label="Nome Completo" value={name} onChangeText={setName} placeholder="Seu nome completo" />
-                <FormRow icon="mail-outline" label="Email" value={email} onChangeText={setEmail} placeholder="Seu email" />
-                <FormRow icon="lock-closed-outline" label="Nova Senha" placeholder="Deixe em branco para não alterar" secureTextEntry value={password} onChangeText={setPassword} />
-                <FormRow icon="lock-closed-outline" label="Confirmar Nova Senha" placeholder="Confirme sua nova senha" secureTextEntry value={confirmPassword} onChangeText={setConfirmPassword} />
+                <FormRow icon="person-outline" label="Nome do Responsável" value={name} onChangeText={setName} placeholder="Seu nome" />
+                <FormRow icon="mail-outline" label="Email de Acesso" value={email} onChangeText={setEmail} placeholder="Seu email" />
+                <FormRow icon="lock-closed-outline" label="Nova Senha" placeholder="Deixe em branco para manter" secureTextEntry value={password} onChangeText={setPassword} />
+                <FormRow icon="lock-closed-outline" label="Confirmar Nova Senha" placeholder="Confirme a senha" secureTextEntry value={confirmPassword} onChangeText={setConfirmPassword} />
             </View>
         </View>
       </ScrollView>
