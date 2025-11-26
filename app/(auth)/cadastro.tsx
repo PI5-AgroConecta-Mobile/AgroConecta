@@ -3,20 +3,19 @@ import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 
 
-import api from '../../services/api';
-
 import axios from 'axios';
+import api from '../../services/api';
+import { generateVerificationCode, storeVerificationCode } from '../../services/emailService';
 
 export default function CadastroScreen() {
   const router = useRouter();
@@ -54,7 +53,7 @@ export default function CadastroScreen() {
     const userType = tipoUsuario === 'cliente' ? 0 : 1;
 
     try {
-      // 3. Chamar a API
+      // 3. Chamar a API para criar usuário
       await api.post('/createUser', {
         name: nome,
         email: email,
@@ -63,21 +62,20 @@ export default function CadastroScreen() {
         userType: userType,
       });
 
-      // 4. Sucesso
+      // 4. Gerar e armazenar código de verificação
+      const verificationCode = generateVerificationCode();
+      await storeVerificationCode(email, verificationCode);
+
+      // 5. Redirecionar para verificação de email
       setLoading(false);
-      Alert.alert(
-        'Cadastro realizado!',
-        'Sua conta foi criada com sucesso. Faça o login para continuar.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              const path = tipoUsuario === 'cliente' ? '/(auth)/loginCliente' : '/(auth)/loginAgricultor';
-              router.push(path as any);
-            },
-          },
-        ]
-      );
+      router.push({
+        pathname: '/(auth)/verificar-email',
+        params: {
+          email: email,
+          tipoUsuario: tipoUsuario,
+          code: verificationCode, // Passar código para exibição (desenvolvimento)
+        },
+      });
     } catch (err) {
       // 5. Tratamento de Erro
       setLoading(false);

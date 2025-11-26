@@ -1,16 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import {
-  StyleSheet, Text, View, ScrollView, Image, TouchableOpacity, TextInput, Alert, ActivityIndicator
-} from 'react-native';
-import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import { Stack, router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet, Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 
 // Ajuste para o seu IP
-const BASE_URL = 'http://192.168.1.102:3333'; 
+const BASE_URL = 'http://192.168.0.117:3333'; 
 
 type FormRowProps = {
     icon: React.ComponentProps<typeof Ionicons>['name'];

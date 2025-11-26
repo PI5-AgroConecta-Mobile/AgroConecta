@@ -1,13 +1,13 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { Conversation, getConversations } from '../../services/chatService';
@@ -28,7 +28,15 @@ export default function ConversationsList({ onSelectConversation }: Conversation
       setLoading(true);
       setError(null);
       const data = await getConversations();
-      setConversations(data);
+      // Remover duplicatas por ID usando Map
+      const conversationsMap = new Map<string, typeof data[0]>();
+      data.forEach((conv) => {
+        if (conv && conv.id) {
+          conversationsMap.set(conv.id, conv);
+        }
+      });
+      const uniqueConversations = Array.from(conversationsMap.values());
+      setConversations(uniqueConversations);
     } catch (err: any) {
       setError(err.message || 'Failed to load conversations');
       console.error('Error loading conversations:', err);
@@ -158,7 +166,7 @@ export default function ConversationsList({ onSelectConversation }: Conversation
     <FlatList
       data={conversations}
       renderItem={renderItem}
-      keyExtractor={(item) => item.id}
+      keyExtractor={(item: Conversation) => item.id}
       contentContainerStyle={styles.listContent}
       refreshing={loading}
       onRefresh={loadConversations}
@@ -263,4 +271,3 @@ const styles = StyleSheet.create({
     color: '#606C38',
   },
 });
-

@@ -80,9 +80,18 @@ export default function ChatScreen({ conversationId, toUserId, placeholder, othe
       try {
         setLoadingMessages(true);
         const history = await getConversationMessages(currentConversationId, 50);
-        setMessages(history.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()));
+        // Remover duplicatas por ID usando Map
+        const messagesMap = new Map<string, ChatMessage>();
+        history.forEach((msg) => {
+          if (msg && msg.id) {
+            messagesMap.set(msg.id, msg);
+          }
+        });
+        const uniqueMessages = Array.from(messagesMap.values());
+        const sorted = uniqueMessages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        setMessages(sorted);
         requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: false }));
-        pushDebug(`[chat] loaded ${history.length} messages from API`);
+        pushDebug(`[chat] loaded ${sorted.length} unique messages from API`);
       } catch (err: any) {
         console.error('Error loading messages:', err);
         // Fallback to socket history
@@ -475,5 +484,3 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
 });
-
-
