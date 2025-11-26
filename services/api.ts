@@ -1,16 +1,23 @@
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// !! IMPORTANTE !!
-// 'localhost' não funciona em apps mobile.
-// Use o IP da sua máquina onde o back-end (porta 3333) está rodando.
-// Exemplo: 'http://192.168.1.10:3333'
-//
-// Para achar seu IP no Windows: abra o cmd e digite `ipconfig` (procure por Endereço IPv4)
-
+// Verifique se este IP é o do seu computador atual (ipconfig no cmd)
 const baseURL = 'http://192.168.1.102:3333';
 
 const api = axios.create({
   baseURL: baseURL,
+});
+
+api.interceptors.request.use(async (config) => {
+  try {
+    const token = await AsyncStorage.getItem('@AgroConecta:token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  } catch (error) {
+    console.log("Erro ao recuperar token:", error);
+  }
+  return config;
 });
 
 export default api;

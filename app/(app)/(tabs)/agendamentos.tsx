@@ -14,7 +14,7 @@ import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import api from '../../../services/api'; 
-import { useAuth } from '../../../context/AuthContext'; // Para o ID do cliente (embora a API já saiba)
+import { useAuth } from '../../../context/AuthContext'; 
 
 interface Agendamento {
   id: string;

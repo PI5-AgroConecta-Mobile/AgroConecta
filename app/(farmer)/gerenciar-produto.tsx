@@ -18,7 +18,6 @@ import api from '../../services/api';
 import axios from 'axios';
 import { ApiProduct } from '../../types/api.types'; 
 
-// Opções para as listas
 const UNIT_TYPES = [
   { id: '1', label: 'Quilo (Kg)' },
   { id: '2', label: 'Unidade (Un)' },

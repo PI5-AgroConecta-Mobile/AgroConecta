@@ -72,7 +72,7 @@ export default function UnifiedLoginScreen() {
             resizeMode="contain"
           />
           <Text style={[styles.title, { color: primaryColor }]}>
-            AgroConecta
+        
           </Text>
           <Text style={styles.subtitle}>
             {isFarmer ? 'Área do Produtor Rural' : 'Produtos frescos na sua mesa'}
@@ -164,9 +164,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   scrollContent: { flexGrow: 1, justifyContent: 'center', padding: 20 },
   header: { alignItems: 'center', marginBottom: 30 },
-  logo: { width: 180, height: 100, marginBottom: 10 },
+  logo: { width: 180, height: 100, marginBottom: 1 },
   title: { fontSize: 28, fontWeight: 'bold' },
-  subtitle: { fontSize: 16, color: '#666', marginTop: 5 },
+  subtitle: { fontSize: 16, color: '#666', marginTop: 1 },
   toggleContainer: { 
     flexDirection: 'row', 
     backgroundColor: '#F5F5F5', 

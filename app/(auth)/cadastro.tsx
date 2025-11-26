@@ -73,7 +73,7 @@ export default function CadastroScreen() {
         params: {
           email: email,
           tipoUsuario: tipoUsuario,
-          code: verificationCode, // Passar código para exibição (desenvolvimento)
+          code: verificationCode, 
         },
       });
     } catch (err) {
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     color: '#283618',
     textAlign: 'center',
     marginBottom: 10,
-    marginTop: 60, // Espaço para o botão de voltar
+    marginTop: 60, 
   },
   subtitle: {
     fontSize: 16,

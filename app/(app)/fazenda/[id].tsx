@@ -1,107 +1,134 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, FlatList, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native';
-import { useLocalSearchParams, router, Stack } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { 
+  View, Text, Image, StyleSheet, FlatList, ActivityIndicator, 
+  TouchableOpacity, ScrollView, Linking 
+} from 'react-native';
+import { useLocalSearchParams, useRouter, Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../../services/api';
-const IMAGE_URL = 'http://192.168.1.102:3333'; 
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function FazendaDetalhes() {
-    const { id } = useLocalSearchParams(); 
-    const [products, setProducts] = useState([]);
-    const [farmer, setFarmer] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+export default function FazendaPerfilScreen() {
+  const { id } = useLocalSearchParams();
+  const router = useRouter();
+  
+  const [farmer, setFarmer] = useState<any>(null);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetchData();
-    }, [id]);
+  useEffect(() => {
+    fetchData();
+  }, [id]);
 
-    const fetchData = async () => {
-        try {
-            const userRes = await api.get(`/getUser/${id}`);
-            setFarmer(userRes.data);
-            const prodRes = await api.get('/listProduct', {
-                params: { ownerId: id } 
-            });
-            setProducts(prodRes.data);
+  const fetchData = async () => {
+    try {
+      const userRes = await api.get(`/getUser/${id}`);
+      setFarmer(userRes.data);
+      const prodRes = await api.get(`/products/farmer/${id}`);
+      setProducts(prodRes.data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        } catch (error) {
-            console.log("Erro ao carregar fazenda", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const openWhatsApp = (contact: string) => {
+    const cleanNumber = contact.replace(/\D/g, '');
+    Linking.openURL(`https://wa.me/55${cleanNumber}`);
+  };
 
-    if (loading) return <ActivityIndicator style={{flex:1}} size="large" color="#283618" />;
+  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#283618"/></View>;
 
-    return (
-        <SafeAreaView style={styles.container}>
-            <Stack.Screen options={{ headerShown: false }} />
-            
-            <ScrollView>
-                {/* Header com Foto da Fazenda/Perfil */}
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color="#fff" />
-                    </TouchableOpacity>
-                    <Image 
-                        source={farmer?.imgUrl ? { uri: `${IMAGE_URL}/${farmer.imgUrl}` } : require('../../../assets/images/fazenda1.jpg')} 
-                        style={styles.coverImage} 
-                    />
-                    <View style={styles.overlay} />
-                    <View style={styles.headerContent}>
-                        <Text style={styles.farmName}>{farmer?.farmName || farmer?.name}</Text>
-                        <Text style={styles.locationText}>
-                            <Ionicons name="location" size={14} color="#fff" /> {farmer?.city || "Localização não informada"}
-                        </Text>
-                    </View>
-                </View>
+  return (
+    <SafeAreaView style={styles.container}>
+      <ScrollView>
+        <View style={styles.header}>
+           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color="#FFF" />
+           </TouchableOpacity>
+           <Image 
+             source={{ uri: farmer?.imgUrl || 'https://via.placeholder.com/500' }} 
+             style={styles.coverImage} 
+           />
+           <View style={styles.overlay} />
+           <View style={styles.headerContent}>
+              <Text style={styles.farmName}>{farmer?.farmName || farmer?.name}</Text>
+              <View style={styles.ratingBadge}>
+                 <Ionicons name="star" size={14} color="#FFD700" />
+                 <Text style={styles.ratingText}>4.8 (Novo)</Text>
+              </View>
+           </View>
+        </View>
 
-                {/* Lista de Produtos */}
-                <View style={styles.body}>
-                    <Text style={styles.sectionTitle}>Produtos Disponíveis</Text>
-                    
-                    {products.length === 0 ? (
-                        <Text style={styles.emptyText}>Nenhum produto disponível no momento.</Text>
-                    ) : (
-                        products.map((item: any) => (
-                            <TouchableOpacity key={item.id} style={styles.productCard}>
-                                <Image 
-                                    source={item.imgUrl ? { uri: item.imgUrl } : require('../../../assets/images/icon.png')} 
-                                    style={styles.prodImage} 
-                                />
-                                <View style={styles.prodInfo}>
-                                    <Text style={styles.prodName}>{item.name}</Text>
-                                    <Text style={styles.prodPrice}>R$ {item.price.toFixed(2)} / {item.unityType === 0 ? 'kg' : 'un'}</Text>
-                                </View>
-                                <TouchableOpacity style={styles.addButton}>
-                                    <Ionicons name="add" size={24} color="#fff" />
-                                </TouchableOpacity>
-                            </TouchableOpacity>
-                        ))
-                    )}
-                </View>
-            </ScrollView>
-        </SafeAreaView>
-    );
+        {/* Informações */}
+        <View style={styles.infoContainer}>
+           <Text style={styles.sectionTitle}>Sobre o Produtor</Text>
+           <Text style={styles.description}>
+             Produtor local focado em agricultura familiar e produtos frescos.
+           </Text>
+
+           {farmer?.contact && (
+             <TouchableOpacity style={styles.whatsappButton} onPress={() => openWhatsApp(farmer.contact)}>
+                <Ionicons name="logo-whatsapp" size={20} color="#FFF" />
+                <Text style={styles.whatsappText}>Entrar em contato</Text>
+             </TouchableOpacity>
+           )}
+        </View>
+        <View style={styles.productsContainer}>
+           <Text style={styles.sectionTitle}>Produtos Disponíveis ({products.length})</Text>
+           
+           {products.length === 0 ? (
+             <Text style={styles.emptyText}>Nenhum produto disponível no momento.</Text>
+           ) : (
+             <FlatList
+               data={products}
+               horizontal
+               showsHorizontalScrollIndicator={false}
+               keyExtractor={(item) => item.id}
+               contentContainerStyle={{ paddingVertical: 10 }}
+               renderItem={({ item }) => (
+                 <Link href={`/detalhesProdutos?id=${item.id}`} asChild>
+                   <TouchableOpacity style={styles.productCard}>
+                      <Image source={{ uri: item.imgUrl }} style={styles.productImage} />
+                      <View style={styles.productInfo}>
+                        <Text style={styles.prodName} numberOfLines={1}>{item.name}</Text>
+                        <Text style={styles.prodPrice}>R$ {item.price.toFixed(2)}</Text>
+                      </View>
+                   </TouchableOpacity>
+                 </Link>
+               )}
+             />
+           )}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F8F7F2' },
-    header: { height: 250, position: 'relative' },
-    coverImage: { width: '100%', height: '100%' },
-    overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.3)' },
-    backButton: { position: 'absolute', top: 20, left: 20, zIndex: 10, padding: 8, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20 },
-    headerContent: { position: 'absolute', bottom: 20, left: 20 },
-    farmName: { fontSize: 26, fontWeight: 'bold', color: '#fff' },
-    locationText: { color: '#eee', fontSize: 14, marginTop: 5 },
-    body: { padding: 20 },
-    sectionTitle: { fontSize: 20, fontWeight: 'bold', color: '#283618', marginBottom: 15 },
-    emptyText: { fontStyle: 'italic', color: '#666' },
-    productCard: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 10, marginBottom: 10, padding: 10, alignItems: 'center', elevation: 2 },
-    prodImage: { width: 60, height: 60, borderRadius: 8, backgroundColor: '#eee' },
-    prodInfo: { flex: 1, marginLeft: 15 },
-    prodName: { fontSize: 16, fontWeight: 'bold', color: '#333' },
-    prodPrice: { color: '#2E7D32', fontWeight: 'bold' },
-    addButton: { backgroundColor: '#2E7D32', padding: 8, borderRadius: 20 },
+  container: { flex: 1, backgroundColor: '#F8F7F2' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { height: 250, position: 'relative' },
+  coverImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.3)' },
+  backButton: { position: 'absolute', top: 40, left: 20, zIndex: 10, padding: 8, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20 },
+  headerContent: { position: 'absolute', bottom: 20, left: 20 },
+  farmName: { color: '#FFF', fontSize: 26, fontWeight: 'bold', textShadowColor: 'rgba(0,0,0,0.7)', textShadowRadius: 10 },
+  ratingBadge: { flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, alignSelf: 'flex-start', marginTop: 5, alignItems: 'center', gap: 4 },
+  ratingText: { color: '#FFD700', fontWeight: 'bold', fontSize: 12 },
+  
+  infoContainer: { padding: 20, backgroundColor: '#FFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, marginTop: -20 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#283618', marginBottom: 10 },
+  description: { color: '#666', lineHeight: 20, marginBottom: 15 },
+  whatsappButton: { backgroundColor: '#25D366', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 12, borderRadius: 10, gap: 8 },
+  whatsappText: { color: '#FFF', fontWeight: 'bold' },
+
+  productsContainer: { padding: 20 },
+  emptyText: { color: '#999', fontStyle: 'italic' },
+  productCard: { width: 140, marginRight: 15, backgroundColor: '#FFF', borderRadius: 10, elevation: 2, padding: 8 },
+  productImage: { width: '100%', height: 100, borderRadius: 8, marginBottom: 8 },
+  productInfo: { alignItems: 'flex-start' },
+  prodName: { fontWeight: 'bold', color: '#333', fontSize: 14 },
+  prodPrice: { color: '#606C38', fontWeight: 'bold', marginTop: 2 },
 });
