@@ -3,13 +3,12 @@ import React from 'react';
 import {
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
-  View,
-  KeyboardAvoidingView,
-  Platform,
+  TouchableOpacity
 } from 'react-native';
 
 export default function RecuperarSenhaScreen() {
@@ -46,7 +45,7 @@ export default function RecuperarSenhaScreen() {
         <Text style={styles.buttonText}>Enviar</Text>
       </TouchableOpacity>
 
-      <Link href="/(auth)/loginCliente" style={styles.backLink}>
+      <Link href="/(auth)" style={styles.backLink} asChild>
         <Text>Voltar para o Login</Text>
       </Link>
     </KeyboardAvoidingView>
