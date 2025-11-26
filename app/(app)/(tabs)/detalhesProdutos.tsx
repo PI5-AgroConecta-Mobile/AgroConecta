@@ -38,7 +38,7 @@ export default function DetalhesProdutoScreen() {
   const [error, setError] = useState<string | null>(null);
   const [quantidade, setQuantidade] = useState('1');
   const [isAgendando, setIsAgendando] = useState(false);
-  const [dataAgendamento, setDataAgendamento] = useState(new Date(Date.now() + 24 * 60 * 60 * 1000)); // Começa 24h no futuro
+  const [dataAgendamento, setDataAgendamento] = useState(new Date(Date.now() + 24 * 60 * 60 * 1000));
   const [showPicker, setShowPicker] = useState(false);
   const [pickerMode, setPickerMode] = useState<'date' | 'time'>('date');
 
@@ -66,218 +66,150 @@ export default function DetalhesProdutoScreen() {
 
   const onChangePicker = (event: any, selectedDate?: Date) => {
     setShowPicker(false);
-    
     if (event.type === 'set' && selectedDate) {
       setDataAgendamento(selectedDate);
     }
   };
 
-  const showDatepicker = () => {
-    setPickerMode('date');
-    setShowPicker(true);
-  };
+  const showDatepicker = () => { setPickerMode('date'); setShowPicker(true); };
+  const showTimepicker = () => { setPickerMode('time'); setShowPicker(true); };
 
-  const showTimepicker = () => {
-    setPickerMode('time');
-    setShowPicker(true);
-  };
-
-  const formatarDataHora = (date: Date) => {
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  const handleVerNoMapa = () => {
+    if (produto?.latitude && produto?.longitude) {
+      router.push({
+        pathname: '/(app)/(tabs)/mapa',
+        params: { lat: produto.latitude, long: produto.longitude, title: produto.name }
+      });
+    } else {
+      Alert.alert("Localização", "O produtor não cadastrou a localização exata deste produto.");
+    }
   };
 
   const handleAgendamento = async () => {
     const qtdeNum = parseInt(quantidade);
-
-    if (isNaN(qtdeNum) || qtdeNum <= 0) {
-      Alert.alert("Erro", "Por favor, insira uma quantidade válida.");
-      return;
-    }
+    if (isNaN(qtdeNum) || qtdeNum <= 0) return Alert.alert("Erro", "Quantidade inválida.");
     if (!produto) return;
-    if (qtdeNum > produto.quantity) {
-      Alert.alert("Stock Insuficiente", `Só existem ${produto.quantity} unidades disponíveis.`);
-      return;
-    }
-    if (dataAgendamento.getTime() < Date.now()) {
-      Alert.alert("Data Inválida", "Não é possível agendar uma data no passado.");
-      return;
-    }
+    if (qtdeNum > produto.quantity) return Alert.alert("Estoque Insuficiente", `Apenas ${produto.quantity} disponíveis.`);
+    if (dataAgendamento.getTime() < Date.now()) return Alert.alert("Data Inválida", "Não pode agendar no passado.");
     
     setIsAgendando(true);
-
     try {
       await api.post('/createAgendamento', {
         productId: produto.id,
         quantity: qtdeNum,
         scheduledFor: dataAgendamento.toISOString(), 
       });
-
       setIsAgendando(false);
-      Alert.alert(
-        "Agendamento Confirmado!",
-        `O seu pedido de ${qtdeNum}x ${produto.name} foi enviado para ${produto.agricultor.name}.`,
-        [{ text: "OK", onPress: () => router.push('/(app)/(tabs)/agendamentos') }]
-      );
-
+      Alert.alert("Sucesso!", `Pedido de ${qtdeNum}x ${produto.name} enviado.`, [{ text: "OK", onPress: () => router.push('/(app)/(tabs)/agendamentos') }]);
     } catch (err) {
       setIsAgendando(false);
-      if (axios.isAxiosError(err) && err.response) {
-        Alert.alert("Erro no Agendamento", err.response.data.err);
-      } else {
-        Alert.alert("Erro", "Não foi possível completar o agendamento.");
-      }
+      Alert.alert("Erro", "Não foi possível completar o agendamento.");
     }
   };
 
-
-  if (loading) { /* ... */ }
-  if (error || !produto) { /* ... */ }
-  const formatPrice = (price: number) => {
-    return `R$ ${price.toFixed(2)}`;
-  };
-
+  if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color="#283618"/></View>;
   if (!produto) return null;
+
+  const unidadeMap = { 1: 'Kg', 2: 'Un', 3: 'Dúzia', 4: 'Maço' };
+  // @ts-ignore
+  const unidadeTexto = unidadeMap[produto.unityType] || 'Un';
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#283618" />
-        </TouchableOpacity>
-        <Image 
-          source={{ uri: produto.imgUrl || 'https://via.placeholder.com/400' }} 
-          style={styles.productImage} 
-        />
+        <Image source={{ uri: produto.imgUrl || 'https://via.placeholder.com/400' }} style={styles.productImage} />
 
         <View style={styles.container}>
           <Text style={styles.productName}>{produto.name}</Text>
-          <Text style={styles.productPrice}>{formatPrice(produto.price)}</Text>
-          <Text style={styles.productQuantity}>Disponível: {produto.quantity} (Kg/Un/etc.)</Text>
+          <Text style={styles.productPrice}>R$ {produto.price.toFixed(2)} / {unidadeTexto}</Text>
+          <Text style={styles.productQuantity}>Estoque: {produto.quantity} {unidadeTexto}</Text>
+
+          {/* Descrição */}
+          {produto.description ? (
+            <View style={styles.descriptionBox}>
+              <Text style={styles.sectionTitle}>Sobre o produto</Text>
+              <Text style={styles.descriptionText}>{produto.description}</Text>
+            </View>
+          ) : null}
+
           <View style={styles.divider} />
-          <Text style={styles.sectionTitle}>Vendido por:</Text>
+          
+          <Text style={styles.sectionTitle}>Produzido por:</Text>
           <View style={styles.agricultorContainer}>
-            <Image 
-              source={{ uri: produto.agricultor.imgUrl || 'https://via.placeholder.com/100' }} 
-              style={styles.agricultorImage} 
-            />
-            <View>
+            <Image source={{ uri: produto.agricultor.imgUrl || 'https://via.placeholder.com/100' }} style={styles.agricultorImage} />
+            <View style={{flex: 1}}>
               <Text style={styles.agricultorName}>{produto.agricultor.name}</Text>
-              <Text style={styles.agricultorRating}>Avaliação: {produto.agricultor.rate.toFixed(1)}/5.0</Text>
+              
+              <TouchableOpacity style={styles.mapButton} onPress={handleVerNoMapa}>
+                 <Ionicons name="location-sharp" size={16} color="#FFF" />
+                 <Text style={styles.mapButtonText}>Ver Localização</Text>
+              </TouchableOpacity>
             </View>
           </View>
+
           <View style={styles.divider} />
           <Text style={styles.sectionTitle}>Agendar Retirada</Text>
           
-          <Text style={styles.label}>Quantidade desejada:</Text>
-          <TextInput
-            style={styles.input}
-            value={quantidade}
-            onChangeText={setQuantidade}
-            keyboardType="numeric"
-            placeholder="1"
-          />
+          <Text style={styles.label}>Quantidade:</Text>
+          <TextInput style={styles.input} value={quantidade} onChangeText={setQuantidade} keyboardType="numeric" placeholder="1" />
 
-          <Text style={styles.label}>Data e Hora da Retirada:</Text>
+          <Text style={styles.label}>Data e Hora:</Text>
           <View style={styles.datePickerContainer}>
             <TouchableOpacity onPress={showDatepicker} style={styles.dateButton}>
               <Ionicons name="calendar-outline" size={20} color="#283618" />
-              <Text style={styles.dateButtonText}>Data</Text>
+              <Text style={styles.dateButtonText}>{dataAgendamento.toLocaleDateString()}</Text>
             </TouchableOpacity>
-            
             <TouchableOpacity onPress={showTimepicker} style={styles.dateButton}>
               <Ionicons name="time-outline" size={20} color="#283618" />
-              <Text style={styles.dateButtonText}>Hora</Text>
+              <Text style={styles.dateButtonText}>{dataAgendamento.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Text>
             </TouchableOpacity>
           </View>
           
-          <Text style={styles.dateDisplay}>
-            {formatarDataHora(dataAgendamento)}
-          </Text>
-
-           <TouchableOpacity 
-            style={[styles.button, isAgendando && styles.buttonDisabled]} 
-            onPress={handleAgendamento}
-            disabled={isAgendando}
-          >
-            {isAgendando ? (
-              <ActivityIndicator size="small" color="#FEFAE0" />
-            ) : (
+           <TouchableOpacity style={[styles.button, isAgendando && styles.buttonDisabled]} onPress={handleAgendamento} disabled={isAgendando}>
+            {isAgendando ? <ActivityIndicator size="small" color="#FEFAE0" /> : (
               <>
-                <Ionicons name="calendar-outline" size={20} color="#FEFAE0" />
-                <Text style={styles.buttonText}>Agendar Retirada</Text>
+                <Ionicons name="bag-check-outline" size={22} color="#FEFAE0" />
+                <Text style={styles.buttonText}>Confirmar Pedido</Text>
               </>
             )}
           </TouchableOpacity>
         </View>
       </ScrollView>
-
-      {showPicker && (
-        <DateTimePicker
-          testID="dateTimePicker"
-          value={dataAgendamento}
-          mode={pickerMode}
-          is24Hour={true}
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={onChangePicker}
-          minimumDate={new Date()} 
-        />
-      )}
+      {showPicker && <DateTimePicker value={dataAgendamento} mode={pickerMode} is24Hour={true} display={Platform.OS === 'ios' ? 'spinner' : 'default'} onChange={onChangePicker} minimumDate={new Date()} />}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-   safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
   container: { padding: 20 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  backButton: { position: 'absolute', top: 50, left: 20, zIndex: 10, backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: 20, padding: 8 },
-  productImage: { width: '100%', height: 300 },
-  productName: { fontSize: 28, fontWeight: 'bold', color: '#283618', marginBottom: 8 },
-  productPrice: { fontSize: 24, fontWeight: '600', color: '#606C38', marginBottom: 8 },
-  productQuantity: { fontSize: 16, color: '#555', marginBottom: 20 },
+  productImage: { width: '100%', height: 300, resizeMode: 'cover' },
+  
+  productName: { fontSize: 26, fontWeight: 'bold', color: '#283618', marginBottom: 5 },
+  productPrice: { fontSize: 24, fontWeight: '600', color: '#606C38', marginBottom: 5 },
+  productQuantity: { fontSize: 14, color: '#888', marginBottom: 15 },
+  
+  descriptionBox: { backgroundColor: '#F9F9F9', padding: 15, borderRadius: 10, marginTop: 5 },
+  descriptionText: { fontSize: 16, color: '#555', lineHeight: 22, marginTop: 5 },
+  
   divider: { height: 1, backgroundColor: '#E0E0E0', marginVertical: 20 },
-  sectionTitle: { fontSize: 20, fontWeight: 'bold', color: '#283618', marginBottom: 15 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#283618', marginBottom: 15 },
+  
   agricultorContainer: { flexDirection: 'row', alignItems: 'center' },
-  agricultorImage: { width: 60, height: 60, borderRadius: 30, marginRight: 15 },
-  agricultorName: { fontSize: 18, fontWeight: '600', color: '#333' },
-  agricultorRating: { fontSize: 14, color: '#606C38' },
-  button: { backgroundColor: '#283618', padding: 15, borderRadius: 10, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', marginTop: 10 },
-  buttonDisabled: { backgroundColor: '#A9A9A9' },
-  buttonText: { color: '#FEFAE0', fontSize: 16, fontWeight: 'bold', marginLeft: 10 },
-  errorText: { textAlign: 'center', fontSize: 16, color: '#D90429', marginBottom: 20 },
+  agricultorImage: { width: 50, height: 50, borderRadius: 25, marginRight: 15 },
+  agricultorName: { fontSize: 18, fontWeight: '600', color: '#333', marginBottom: 5 },
+  
+  mapButton: { flexDirection: 'row', backgroundColor: '#BC6C25', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, alignSelf: 'flex-start', alignItems: 'center', gap: 5 },
+  mapButtonText: { color: '#FFF', fontSize: 12, fontWeight: 'bold' },
+  
   label: { fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 8, marginTop: 10 },
-  input: { height: 50, backgroundColor: '#F0F0F0', borderRadius: 10, paddingHorizontal: 15, fontSize: 16, borderWidth: 1, borderColor: '#E0E0E0', marginBottom: 10 },
-  datePickerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 10,
-  },
-  dateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    backgroundColor: '#F0F0F0',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  dateButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#283618',
-    marginLeft: 8,
-  },
-  dateDisplay: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#606C38',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
+  input: { height: 50, backgroundColor: '#F8F8F8', borderRadius: 10, paddingHorizontal: 15, fontSize: 16, borderWidth: 1, borderColor: '#DDD', marginBottom: 10 },
+  datePickerContainer: { flexDirection: 'row', justifyContent: 'space-between', gap: 10, marginBottom: 20 },
+  dateButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 12, backgroundColor: '#F8F8F8', borderRadius: 8, borderWidth: 1, borderColor: '#DDD' },
+  dateButtonText: { fontSize: 16, color: '#283618', marginLeft: 8 },
+  
+  button: { backgroundColor: '#283618', padding: 16, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', shadowColor: "#000", shadowOffset: {width: 0, height: 2}, shadowOpacity: 0.2, shadowRadius: 3.84, elevation: 5 },
+  buttonDisabled: { backgroundColor: '#A9A9A9' },
+  buttonText: { color: '#FEFAE0', fontSize: 18, fontWeight: 'bold', marginLeft: 10 },
 });

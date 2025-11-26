@@ -17,7 +17,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 
 // Ajuste para o seu IP
-const BASE_URL = 'http://192.168.0.117:3333'; 
+const BASE_URL = 'http://192.168.1.102:3333'; 
 
 type FormRowProps = {
     icon: React.ComponentProps<typeof Ionicons>['name'];

@@ -9,14 +9,13 @@ import {
   Image,
   RefreshControl,
   TouchableOpacity,
-  Alert, // <-- Importar Alert
+  Alert, 
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../../services/api'; 
-import axios from 'axios'; // <-- Importar Axios para erros
+import axios from 'axios'; // 
 
-// 2. Definir o tipo de dados
 interface Agendamento {
   id: string;
   quantity: number;
@@ -27,13 +26,11 @@ interface Agendamento {
   client: { name: string; contact: string; };
 }
 
-// 3. Interface para as Props do Card
 interface CardProps {
   item: Agendamento;
-  onUpdateStatus: (agendamentoId: string, newStatus: number) => void; // Função para atualizar
+  onUpdateStatus: (agendamentoId: string, newStatus: number) => void; 
 }
 
-// --- Componente Card (ATUALIZADO) ---
 const AgendamentoCard = ({ item, onUpdateStatus }: CardProps) => {
 
   const formatPrice = (price: number) => {
@@ -67,18 +64,17 @@ const AgendamentoCard = ({ item, onUpdateStatus }: CardProps) => {
         <Text style={styles.statusText}>{statusInfo.text}</Text>
       </View>
       
-      {/* 4. Botões de Ação (LIGADOS) */}
-      {item.status === 0 && ( // Só mostra botões se estiver Pendente
+      {item.status === 0 && ( 
         <View style={styles.actionButtons}>
           <TouchableOpacity 
             style={[styles.actionButton, styles.cancelButton]}
-            onPress={() => onUpdateStatus(item.id, 2)} // 2 = Cancelar
+            onPress={() => onUpdateStatus(item.id, 2)} 
           >
             <Ionicons name="close" size={20} color="#FFFFFF" />
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.actionButton, styles.confirmButton]}
-            onPress={() => onUpdateStatus(item.id, 1)} // 1 = Confirmar
+            onPress={() => onUpdateStatus(item.id, 1)} 
           >
             <Ionicons name="checkmark" size={20} color="#FFFFFF" />
           </TouchableOpacity>
@@ -88,13 +84,11 @@ const AgendamentoCard = ({ item, onUpdateStatus }: CardProps) => {
   );
 };
 
-// --- Ecrã Principal (ATUALIZADO) ---
 export default function AgendamentosFarmerScreen() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Função para carregar os agendamentos (sem alterações)
   const fetchAgendamentos = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
     setError(null);
@@ -109,14 +103,12 @@ export default function AgendamentosFarmerScreen() {
     }
   }, []);
 
-  // useFocusEffect (sem alterações)
   useFocusEffect(
     useCallback(() => {
       fetchAgendamentos();
     }, [fetchAgendamentos])
   );
 
-  // --- 5. NOVA FUNÇÃO PARA ATUALIZAR O STATUS ---
   const handleUpdateStatus = async (agendamentoId: string, newStatus: number) => {
     const actionText = newStatus === 1 ? "Confirmar" : "Cancelar";
     
@@ -130,19 +122,14 @@ export default function AgendamentosFarmerScreen() {
           style: newStatus === 1 ? "default" : "destructive",
           onPress: async () => {
             try {
-              // 1. Chamar a nova API
               await api.put(`/updateAgendamentoStatus/${agendamentoId}`, {
                 status: newStatus 
               });
-
-              // 2. Atualizar a lista localmente (mais rápido)
-              // ou recarregar da API
               setAgendamentos(prev =>
                 prev.map(ag =>
                   ag.id === agendamentoId ? { ...ag, status: newStatus } : ag
                 )
               );
-              // await fetchAgendamentos(false); // Alternativa
               
             } catch (err) {
               if (axios.isAxiosError(err) && err.response) {
@@ -157,7 +144,6 @@ export default function AgendamentosFarmerScreen() {
     );
   };
 
-  // 8. Renderização (Atualizada para passar a nova função)
   const renderContent = () => {
     if (loading) {
       return <ActivityIndicator size="large" color="#283618" style={styles.centered} />;
@@ -175,7 +161,7 @@ export default function AgendamentosFarmerScreen() {
         renderItem={({ item }) => (
           <AgendamentoCard 
             item={item} 
-            onUpdateStatus={handleUpdateStatus} // <-- Passa a função
+            onUpdateStatus={handleUpdateStatus} 
           />
         )}
         contentContainerStyle={styles.listContainer}
@@ -196,9 +182,7 @@ export default function AgendamentosFarmerScreen() {
   );
 }
 
-// --- Estilos (sem alterações da Etapa 35) ---
 const styles = StyleSheet.create({
-  // ... (cole os estilos da Etapa 35 aqui)
   safeArea: { flex: 1, backgroundColor: '#F8F7F2' },
   header: { padding: 20, borderBottomWidth: 1, borderBottomColor: '#EEE' },
   title: { fontSize: 26, fontWeight: 'bold', color: '#283618' },

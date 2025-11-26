@@ -3,6 +3,7 @@ export interface ApiProduct {
   name: string;
   price: number;
   imgUrl: string;
+  description?: string;
   quantity: number;
   ownerId: string;
   type: number;      
