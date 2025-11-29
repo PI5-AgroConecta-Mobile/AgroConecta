@@ -1,50 +1,55 @@
-# Welcome to your Expo app 👋
+# AgroConecta - App Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicação móvel desenvolvida com React Native e Expo.
 
-## Get started
+## 🚀 Pré-requisitos
 
-1. Install dependencies
+* [Node.js](https://nodejs.org/) instalado.
+* App **Expo Go** no celular.
+* Backend rodando localmente.
 
-   ```bash
-   npm install
-   ```
+## 📦 Instalação
 
-2. Start the app
+1.  Acesse a pasta do projeto no terminal.
+2.  Instale as dependências:
+    ```bash
+    npm install
+    ```
 
-   ```bash
-   npx expo start
-   ```
+## ⚠️ CONFIGURAÇÃO CRÍTICA: Endereço IP
 
-In the output, you'll find options to open the app in a
+Como o backend roda no seu computador e o app no seu celular, é necessário configurar o IP da sua máquina em **vários arquivos** do projeto.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### 1. Descubra seu IP Local
+No terminal do computador, digite:
+* **Windows:** `ipconfig` (procure por Endereço IPv4, ex: `192.168.1.15`)
+* **Mac/Linux:** `ifconfig`
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### 2. Atualize os Arquivos
+Você deve substituir o IP antigo (provavelmente `192.168.1.102`) pelo **seu IP atual** nos seguintes arquivos:
 
-## Get a fresh project
+1.  **Principal (API):**
+    * `services/api.ts`
 
-When you're ready, run:
+2.  **Área do Agricultor:**
+    * `app/(farmer)/editar-perfil.tsx`
+    * `app/(farmer)/(tabs)/perfil-fazenda.tsx`
 
-```bash
-npm run reset-project
-```
+3.  **Área do Cliente/Comum:**
+    * `app/(app)/(tabs)/editarPerfil.tsx`
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## ▶️ Rodando o App
 
-## Learn more
+1.  Certifique-se que o backend está rodando.
+2.  Inicie o Expo:
+    ```bash
+    npx expo start
+    ```
+3.  Escaneie o QR Code com o aplicativo **Expo Go** no seu celular.
 
-To learn more about developing your project with Expo, look at the following resources:
+### 🛠️ Solução de Problemas
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+* **Erro "Network Error" ou App não conecta:**
+    * Confira se mudou o IP em **todos** os arquivos listados acima.
+    * Confira se o celular e o PC estão no **mesmo Wi-Fi**.
+    * Desative temporariamente o Firewall do Windows se necessário.
